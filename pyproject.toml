@@ -51,9 +51,9 @@ all = [
 dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.6", "mypy>=1.10"]
 
 [project.urls]
-Homepage = "https://github.com/keyuraghao/mobiot"
-Repository = "https://github.com/keyuraghao/mobiot"
-Issues = "https://github.com/keyuraghao/mobiot/issues"
+Homepage = "https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest"
+Repository = "https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest"
+Issues = "https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/issues"
 
 [project.scripts]
 mobiot = "mobiot.cli:run"

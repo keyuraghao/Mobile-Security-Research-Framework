@@ -50,5 +50,5 @@ Initial public release.
 - **Cross-platform** throughout: tool discovery via `PATH`, no hardcoded paths,
   `platformdirs` workspace, shell-free subprocess execution.
 
-[Unreleased]: https://github.com/keyuraghao/mobiot/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/keyuraghao/mobiot/releases/tag/v0.1.0
+[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.1.0
