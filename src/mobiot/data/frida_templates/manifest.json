@@ -1,0 +1,161 @@
+{
+  "templates": {
+    "ssl-pinning-bypass": {
+      "file": "ssl_pinning_bypass.js",
+      "summary": "Bypass common Android SSL/TLS certificate pinning (TrustManager, OkHttp, WebView).",
+      "platform": "android",
+      "category": "bypass",
+      "params": {}
+    },
+    "hostname-verifier-bypass": {
+      "file": "hostname_verifier_bypass.js",
+      "summary": "Force HostnameVerifier to accept all hosts for TLS interception.",
+      "platform": "android",
+      "category": "bypass",
+      "params": {}
+    },
+    "root-bypass": {
+      "file": "root_bypass.js",
+      "summary": "Defeat common Android root-detection checks (file, package, exec).",
+      "platform": "android",
+      "category": "bypass",
+      "params": {}
+    },
+    "anti-frida-bypass": {
+      "file": "anti_frida_bypass.js",
+      "summary": "Hide common Frida/debugger detection signals.",
+      "platform": "android",
+      "category": "bypass",
+      "params": {}
+    },
+    "biometric-bypass": {
+      "file": "biometric_bypass.js",
+      "summary": "Force BiometricPrompt/Fingerprint auth callbacks to succeed (best-effort).",
+      "platform": "android",
+      "category": "bypass",
+      "params": {}
+    },
+    "crypto-monitor": {
+      "file": "crypto_monitor.js",
+      "summary": "Monitor javax.crypto Cipher usage: algorithm, key bytes and plaintext/ciphertext.",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "keystore-monitor": {
+      "file": "keystore_monitor.js",
+      "summary": "Log Android KeyStore access (aliases, key/certificate operations).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "sharedprefs-monitor": {
+      "file": "sharedprefs_monitor.js",
+      "summary": "Log SharedPreferences reads/writes (insecure local storage).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "sqlite-monitor": {
+      "file": "sqlite_monitor.js",
+      "summary": "Log SQLite queries and execSQL (data access + SQLi surface).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "fileio-monitor": {
+      "file": "fileio_monitor.js",
+      "summary": "Log file opens for read/write (insecure storage discovery).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "clipboard-monitor": {
+      "file": "clipboard_monitor.js",
+      "summary": "Log clipboard writes (sensitive-data leakage vector).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "base64-monitor": {
+      "file": "base64_monitor.js",
+      "summary": "Log android.util.Base64 encode/decode (often wraps secrets).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "http-monitor": {
+      "file": "http_monitor.js",
+      "summary": "Log outbound HTTP(S) requests (HttpURLConnection + OkHttp).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "intent-monitor": {
+      "file": "intent_monitor.js",
+      "summary": "Log Intent creation and component navigation (IPC surface).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "logcat-monitor": {
+      "file": "logcat_monitor.js",
+      "summary": "Log android.util.Log calls (apps often log secrets).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "load-library-monitor": {
+      "file": "load_library_monitor.js",
+      "summary": "Log native library loads (System.loadLibrary / System.load).",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "webview-inspect": {
+      "file": "webview_inspect.js",
+      "summary": "Log WebView.loadUrl / loadData / evaluateJavascript / addJavascriptInterface calls.",
+      "platform": "android",
+      "category": "monitor",
+      "params": {}
+    },
+    "list-classes": {
+      "file": "list_classes.js",
+      "summary": "Enumerate loaded Java classes whose name contains a filter substring.",
+      "platform": "android",
+      "category": "recon",
+      "params": {
+        "FILTER": "Case-insensitive substring to match class names against."
+      }
+    },
+    "method-trace": {
+      "file": "method_trace.js",
+      "summary": "Trace every overload of every method of a Java class, logging args and return values.",
+      "platform": "android",
+      "category": "trace",
+      "params": {
+        "CLASS": "Fully-qualified Java class name to trace, e.g. jakhar.aseem.diva.APICreds"
+      }
+    },
+    "hook-method": {
+      "file": "hook_method.js",
+      "summary": "Hook a single Java method (all overloads); log arguments and return value.",
+      "platform": "android",
+      "category": "trace",
+      "params": {
+        "CLASS": "Fully-qualified Java class name.",
+        "METHOD": "Method name to hook."
+      }
+    },
+    "dump-stacktrace": {
+      "file": "dump_stacktrace.js",
+      "summary": "Print the Java call stack whenever a given method is invoked.",
+      "platform": "android",
+      "category": "trace",
+      "params": {
+        "CLASS": "Fully-qualified Java class name.",
+        "METHOD": "Method name to trace the call stack for."
+      }
+    }
+  }
+}
