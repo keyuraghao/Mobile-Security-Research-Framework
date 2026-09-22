@@ -14,6 +14,16 @@ The cross-platform desktop app (`mobiot ui`):
 |-----------|-------------|---------------|
 | ![Dashboard](docs/screenshots/01_dashboard.png) | ![Frida Hooks](docs/screenshots/02_frida_hooks.png) | ![Static SAST](docs/screenshots/03_static_sast.png) |
 
+## Download
+
+Prebuilt standalone desktop-app binaries for Linux, Windows and macOS are attached to each [GitHub Release](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/latest). Download the one for your OS and run it, no Python required:
+
+- Linux: `mobiot-linux-x86_64`
+- Windows: `mobiot-windows-x86_64.exe`
+- macOS (Apple Silicon): `mobiot-macos-arm64`
+
+Prefer pip? The same release also ships a universal wheel and sdist (`pip install mobiot-0.1.0-py3-none-any.whl`), and the desktop app then launches with `mobiot ui`.
+
 ## Highlights
 
 - Extensible by design. Every capability is an `Engine` with `@action` methods registered in one place. New engines and actions automatically appear in the desktop app, the CLI, and the MCP server, with no extra wiring.
