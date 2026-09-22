@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# mobiot workspace / runtime artefacts
+*.flows
+*.pcap
+*.log
+mobsf_api_key
+mobsf_home/
+
+# Vendored / large third-party checkouts and binaries
+mobsf/
+frida-server-*
+*.apk
+*.ipa
+*.tar.gz
+
+# Local test-application folders (do not ship sample binaries)
+Test_Aplication/
+Test_Applications/
+
+# OS noise
+.DS_Store
+Thumbs.db

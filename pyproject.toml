@@ -1,0 +1,101 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mobiot"
+version = "0.1.0"
+description = "Unified, cross-platform Mobile & IoT SAST/DAST/pentest toolkit with a CLI and MCP server."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "GPL-3.0-only" }
+authors = [{ name = "Keyur Aghao" }]
+keywords = [
+    "mobile security", "iot security", "sast", "dast", "pentest",
+    "frida", "mobsf", "mitmproxy", "objection", "mcp",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Security",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
+# Core runtime dependencies. External binaries (adb, nmap, binwalk, wkhtmltopdf)
+# are discovered on PATH at runtime and are documented in the README.
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.0",
+    "httpx>=0.27",
+    "platformdirs>=4.0",
+    "pydantic>=2.5",
+    "pydantic-settings>=2.1",
+    "psutil>=5.9",
+    "fastmcp>=2.0",
+    "defusedxml>=0.7",
+]
+
+[project.optional-dependencies]
+# Heavy engine backends. Installed by default in the project venv, but optional
+# for lightweight consumers that only need part of the toolkit.
+frida = ["frida>=17.0", "frida-tools>=13.0", "objection>=1.11"]
+proxy = ["mitmproxy>=11.0"]
+mobsf = ["mobsf>=4.5"]
+qr = ["qrcode>=7.4"]
+gui = ["PyQt6>=6.6"]
+all = [
+    "frida>=17.0", "frida-tools>=13.0", "objection>=1.11",
+    "mitmproxy>=11.0", "qrcode>=7.4", "PyQt6>=6.6",
+]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.6", "mypy>=1.10"]
+
+[project.urls]
+Homepage = "https://github.com/keyuraghao/mobiot"
+Repository = "https://github.com/keyuraghao/mobiot"
+Issues = "https://github.com/keyuraghao/mobiot/issues"
+
+[project.scripts]
+mobiot = "mobiot.cli:run"
+mobiot-mcp = "mobiot.mcp_server:main"
+
+[project.gui-scripts]
+mobiot-gui = "mobiot.gui:run"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mobiot"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/mobiot/data" = "mobiot/data"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/mobiot", "tests", "README.md", "CHANGELOG.md", "LICENSE"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "S"]
+ignore = [
+    "S101",  # allow assert
+    "S104",  # binding to 0.0.0.0 is intentional for the proxy/MCP listeners
+    "S110",  # try/except/pass used deliberately with documented fallbacks
+    "S603",  # subprocess calls are argv-list + shell=False by construction
+    "S607",  # tools are resolved via PATH cross-platform (shutil.which)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "B"]
+"src/mobiot/cli.py" = ["B008"]  # typer.Option/Argument defaults are the Typer idiom
+"src/mobiot/gui/theme.py" = ["E501"]  # long CSS/QSS lines are fine
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["mobiot"]
+ignore_missing_imports = true
