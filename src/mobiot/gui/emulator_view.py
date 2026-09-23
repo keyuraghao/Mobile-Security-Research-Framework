@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -41,12 +42,29 @@ class EmulatorView(QWidget):
         lay.setContentsMargins(8, 8, 8, 8)
 
         note = QLabel(
-            "Managed rooted Android emulator (Magisk + LSPosed). Requires the Android SDK "
-            "and host virtualization (KVM/HAXM). Large images download on first setup."
+            "<b>Managed rooted Android emulator</b> (Magisk + LSPosed). "
+            "Requires host virtualization: Linux <b>KVM</b>, Windows <b>WHPX/HAXM</b> "
+            "or <b>Hyper-V</b>, macOS <b>Hypervisor.framework</b>. The Android SDK, "
+            "system image and modules download automatically on first run (a few GB)."
         )
+        note.setTextFormat(Qt.TextFormat.RichText)
         note.setWordWrap(True)
-        note.setStyleSheet("color:#555;")
         lay.addWidget(note)
+
+        steps = QLabel(
+            "<b>How to use:</b> &nbsp; 1) pick API / image / ABI below &nbsp;→&nbsp; "
+            "2) click <b>Provision all-in-one</b> (does Setup → Start → Root → LSPosed → "
+            "Modules → Root checker). &nbsp; Or run the buttons one by one. &nbsp; "
+            "3) In the emulator, open <b>LSPosed</b> to enable the installed modules, and "
+            "<b>Magisk</b> to confirm root. &nbsp; Use <b>Status</b> anytime to check "
+            "tools / booted / rooted state."
+        )
+        steps.setTextFormat(Qt.TextFormat.RichText)
+        steps.setWordWrap(True)
+        steps.setStyleSheet(
+            "background:#eef4fa; border:1px solid #b8d4ec; border-radius:4px; padding:8px;"
+        )
+        lay.addWidget(steps)
 
         cfg = QGroupBox("Configuration")
         grid = QGridLayout(cfg)

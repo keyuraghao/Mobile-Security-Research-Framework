@@ -62,6 +62,29 @@ this machine:</p>
   <tr><td>Workspace</td><td>Where reports, captures, certificates and logs are stored.</td></tr>
 </table>
 
+<h2>Rooted emulator &mdash; step by step</h2>
+<p>The <b>Emulator</b> tab provisions and drives a rooted Android emulator so you can
+run the target app and observe its behaviour. It needs host virtualization
+(Linux <b>KVM</b>, Windows <b>WHPX/HAXM</b> or <b>Hyper-V</b>, macOS
+<b>Hypervisor.framework</b>). The Android SDK, system image and modules download
+automatically on first run (a few GB).</p>
+<ol>
+  <li>Open the <b>Emulator</b> tab and choose the <b>API level</b>, <b>image</b> and <b>ABI</b>
+      (x86_64 is fastest under virtualization).</li>
+  <li>Click <b>Provision all-in-one</b> &mdash; this runs, in order: <b>Setup</b> (SDK +
+      system image + AVD), <b>Start</b> (boot), <b>Root</b> (Magisk), <b>Install LSPosed</b>,
+      <b>Install modules</b> and <b>Root checker</b>. You can also run each button
+      individually.</li>
+  <li>When it finishes, open <b>LSPosed</b> inside the emulator to enable the installed
+      modules, and <b>Magisk</b> to confirm root.</li>
+  <li>Use <b>Status</b> at any time to see the tool paths and whether the emulator is
+      booted and rooted. Tick modules (JustTrustMe, Inspeckage, HideMyApplist, ...) or add
+      your own APK before installing.</li>
+</ol>
+<p>Once the emulator is up, the other tabs work against it automatically: analyze in
+<b>Static</b>, hook in <b>Frida Hooks</b> / <b>Dynamic</b>, grab databases in <b>App
+Data</b>, and collect results in <b>Findings</b>.</p>
+
 <h2>MCP server &mdash; how it is set up</h2>
 <p>mobiot ships a Model Context Protocol (MCP) server that exposes <b>every</b>
 engine action as a tool, so an AI client (for example Claude) can drive the whole
