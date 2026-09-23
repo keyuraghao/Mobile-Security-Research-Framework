@@ -5,6 +5,14 @@ import pytest
 from mobiot.config import load_config
 from mobiot.engines.hooks import HooksEngine
 from mobiot.exceptions import EngineError
+from mobiot.mobsf_scripts import scripts_dir
+
+# MobSF is an optional heavy backend; its Frida script library is only present
+# when the mobsf package is installed (e.g. the standalone bundle). Skip the
+# scripts-library tests cleanly when it is not (as CI does not install MobSF).
+requires_mobsf_scripts = pytest.mark.skipif(
+    scripts_dir() is None, reason="MobSF frida scripts not installed"
+)
 
 
 @pytest.fixture()
@@ -52,6 +60,7 @@ def test_test_requires_target(engine):
         engine.test()  # neither template nor script_path
 
 
+@requires_mobsf_scripts
 def test_mobsf_script_library(engine):
     res = engine.mobsf_scripts()
     assert res["count"] > 100  # MobSF ships ~118 scripts
@@ -60,6 +69,7 @@ def test_mobsf_script_library(engine):
     assert any(i.startswith("android/") for i in ids)
 
 
+@requires_mobsf_scripts
 def test_mobsf_script_source_and_traversal(engine):
     import pytest as _pt
     src = engine.mobsf_script_source("android/default/ssl_pinning_bypass")["script"]
