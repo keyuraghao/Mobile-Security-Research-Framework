@@ -8,11 +8,15 @@ mobiot glues best-in-class security engines together behind one consistent inter
 
 ## Screenshots
 
-The cross-platform desktop app (`mobiot ui`):
+The cross-platform desktop app (`mobiot ui`), a classic Windows-style application:
 
-| Dashboard | Frida Hooks | Static (SAST) |
-|-----------|-------------|---------------|
-| ![Dashboard](docs/screenshots/01_dashboard.png) | ![Frida Hooks](docs/screenshots/02_frida_hooks.png) | ![Static SAST](docs/screenshots/03_static_sast.png) |
+| Static analysis findings (tabular) | APK internal file browser |
+|---|---|
+| ![SAST findings](docs/screenshots/02_sast_findings.png) | ![Files](docs/screenshots/05_sast_files.png) |
+
+| Dynamic (DAST) techniques | Help & MCP setup |
+|---|---|
+| ![DAST](docs/screenshots/07_dast.png) | ![Help](docs/screenshots/08_help.png) |
 
 ## Download
 

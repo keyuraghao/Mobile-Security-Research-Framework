@@ -55,8 +55,8 @@ def _config() -> Config:
 
 
 def _emit(result: Any) -> None:
-    """Render a command result as JSON (always machine-readable and safe)."""
-    console.print_json(jsonlib.dumps(result, default=str))
+    """Print a command result as plain JSON (machine-readable, pipes into jq)."""
+    print(jsonlib.dumps(result, indent=2, default=str))
 
 
 @app.callback()

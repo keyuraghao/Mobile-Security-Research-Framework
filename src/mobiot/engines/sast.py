@@ -405,6 +405,47 @@ class SASTEngine(Engine):
     def scorecard(self, scan_hash: str) -> dict[str, Any]:
         return self._load_report(scan_hash).get("appsec", {})
 
+    def _app_extract_dir(self, scan_hash: str) -> Path:
+        """Directory where MobSF extracted the scanned app's internal files."""
+        return self.config.workspace / "mobsf_home" / "uploads" / scan_hash
+
+    @action("List the internal files of a scanned app.")
+    def files(self, scan_hash: str) -> dict[str, Any]:
+        report = self._load_report(scan_hash)
+        return {"hash": scan_hash, "files": report.get("files", [])}
+
+    @action("Read one internal file of a scanned app (path relative to app root).")
+    def file_content(
+        self, scan_hash: str, rel_path: str, max_bytes: int = 300000
+    ) -> dict[str, Any]:
+        """Return the content of a file inside the extracted app.
+
+        Path traversal is rejected: the resolved target must stay within the
+        app's extraction directory.
+        """
+        base = self._app_extract_dir(scan_hash).resolve()
+        target = (base / rel_path).resolve()
+        if not target.is_relative_to(base):
+            raise EngineError("sast", "Path escapes the application directory.")
+        if not target.is_file():
+            raise EngineError("sast", f"File not found in app: {rel_path}")
+        raw = target.read_bytes()
+        truncated = len(raw) > max_bytes
+        raw = raw[:max_bytes]
+        try:
+            content = raw.decode("utf-8")
+            binary = False
+        except UnicodeDecodeError:
+            content = raw.hex()
+            binary = True
+        return {
+            "path": rel_path,
+            "binary": binary,
+            "size": target.stat().st_size,
+            "truncated": truncated,
+            "content": content,
+        }
+
     @action("Export a scan's full report to a JSON file in the workspace.")
     def export(self, scan_hash: str, out_path: str | None = None) -> dict[str, Any]:
         report = self._load_report(scan_hash)

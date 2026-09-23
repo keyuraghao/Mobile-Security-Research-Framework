@@ -90,7 +90,8 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S", "B"]
 "src/mobiot/cli.py" = ["B008"]  # typer.Option/Argument defaults are the Typer idiom
-"src/mobiot/gui/theme.py" = ["E501"]  # long CSS/QSS lines are fine
+"src/mobiot/gui/*" = ["E501", "SIM118"]  # long QSS/HTML/lambda lines; Qt .keys() is not a dict
+"src/mobiot/report_format.py" = ["E501"]  # descriptive display strings
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

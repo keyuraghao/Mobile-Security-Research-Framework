@@ -53,11 +53,26 @@ def test_mainwindow_builds_all_tabs(qapp, tmp_path):
         "Dashboard",
         "Static (SAST)",
         "Frida Hooks",
-        "Dynamic",
+        "Dynamic (DAST)",
         "Proxy",
         "Network",
         "IoT",
+        "Help",
     ]
+
+
+def test_sast_view_has_all_analyzer_tabs(qapp, tmp_path):
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    sub = [win.sast_view.tabs.tabText(i) for i in range(win.sast_view.tabs.count())]
+    for expected in (
+        "Overview", "Findings", "Permissions", "Certificate", "Manifest",
+        "Network", "Code Analysis", "Binary / NDK", "API", "Trackers",
+        "Secrets", "Components", "Files", "Raw JSON",
+    ):
+        assert expected in sub
 
 
 def test_hook_library_loads_into_combo(qapp, tmp_path):
@@ -69,13 +84,32 @@ def test_hook_library_loads_into_combo(qapp, tmp_path):
     assert win.hook_combo.count() >= 15  # large inbuilt library
 
 
-def test_sast_scorecard_renders(qapp, tmp_path):
+def test_sast_view_populates_tables(qapp, tmp_path):
     cfg = load_config(workspace=tmp_path)
     cfg.ensure_dirs()
     win = _make_window(cfg)
     _drain(qapp, win)
-    win._sast_scorecard(
-        {"security_score": 42, "high": [{"title": "x"}], "warning": [], "info": []}
-    )
-    assert "42" in win.sast_score.text()
-    assert win.sast_tree.topLevelItemCount() == 3
+    ctx = {
+        "file_name": "x.apk",
+        "package_name": "com.x",
+        "appsec": {
+            "security_score": 42,
+            "high": [{"title": "H", "description": "d"}],
+            "warning": [], "info": [],
+        },
+        "permissions": {"android.permission.INTERNET": {"status": "normal", "info": "net"}},
+        "certificate_analysis": {"certificate_findings": [["info", "signed", "ok"]]},
+        "manifest_analysis": {
+            "manifest_findings": [{"severity": "high", "title": "t", "description": "d"}]
+        },
+        "code_analysis": {
+            "findings": {"rule1": {"metadata": {"severity": "warning"}, "files": {"a.java": "1"}}}
+        },
+        "files": ["a/b.txt", "c.xml"],
+    }
+    win.sast_view._populate(ctx)
+    assert "42" in win.sast_view.summary.text()
+    assert win.sast_view.t_findings.rowCount() == 1
+    assert win.sast_view.t_perms.rowCount() == 1
+    assert win.sast_view.t_code.rowCount() == 1
+    assert win.sast_view.file_tree.topLevelItemCount() == 2  # 'a' dir + 'c.xml'
