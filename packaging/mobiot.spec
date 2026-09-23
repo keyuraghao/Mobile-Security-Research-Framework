@@ -6,7 +6,7 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 datas, binaries, hiddenimports = [], [], []
 
 # Packages whose code + data files must all ship.
-for pkg in ("mobiot", "mobsf", "apkid", "apksigtool"):
+for pkg in ("mobiot", "mobsf", "apkid", "apksigtool", "libsast"):
     d, b, h = collect_all(pkg)
     datas += d
     binaries += b
@@ -25,6 +25,16 @@ hiddenimports += [
     "mobsf.StaticAnalyzer",
     "mobsf.DynamicAnalyzer",
     "mobsf.MalwareAnalyzer",
+]
+
+# Modules referenced only by string (Django LOGGING/config, DB backends) that
+# PyInstaller's static analysis cannot see.
+hiddenimports += [
+    "colorlog",
+    "colorlog.formatter",
+    "django.db.backends.sqlite3",
+    "django.template.loaders.filesystem",
+    "django.template.loaders.app_directories",
 ]
 
 # Optionally bundle a vendor/ tree of native tools (jre, jadx, adb, frida-server)
