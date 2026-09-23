@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-22
+
+### Fixed
+- Emulator (and other) downloads failed with `SSL: CERTIFICATE_VERIFY_FAILED` in the standalone app; downloads now use httpx with the bundled `certifi` CA store.
+- `emulator setup` now auto-downloads the Android command-line tools (using the bundled JRE) and installs the emulator + system image, instead of erroring when no SDK is present.
+- LSPosed / Magisk / Xposed-module downloads resolve the latest release via the GitHub API (no more 404s), preferring release over debug builds.
+
+### Added
+- Emulator API-level dropdown spans API 7 (Android 2.1) to 35 (Android 15).
+
 ## [0.3.0] - 2026-09-22
 
 Professional desktop UI, real analyzer output, and a full pentest workflow.
@@ -81,7 +91,8 @@ Initial public release.
 - **Cross-platform** throughout: tool discovery via `PATH`, no hardcoded paths,
   `platformdirs` workspace, shell-free subprocess execution.
 
-[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.1
 [0.3.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.0
 [0.2.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.2.0
 [0.1.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.1.0

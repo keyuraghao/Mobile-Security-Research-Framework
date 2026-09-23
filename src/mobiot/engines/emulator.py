@@ -29,16 +29,18 @@ from ..platform_utils import IS_WINDOWS, run, spawn, which
 from ..registry import register
 from .base import Engine, action
 
-# Curated, commonly-used Xposed/LSPosed modules for mobile pentesting. Each is
-# downloaded from its GitHub release on demand; add your own via add_module.
+# Curated, commonly-used Xposed/LSPosed modules for mobile pentesting, mapped to
+# their GitHub repo. The latest release APK is resolved at install time (via the
+# GitHub API) so links never go stale; add your own via add_module.
 CURATED_MODULES: dict[str, str] = {
-    "JustTrustMe": "https://github.com/Fuzion24/JustTrustMe/releases/download/v2.0/JustTrustMe.apk",
-    "Inspeckage": "https://github.com/ac-pm/Inspeckage/releases/download/v2.4/Inspeckage-2.4.apk",
-    "HideMyApplist": "https://github.com/Dr-TSNG/Hide-My-Applist/releases/latest/download/HMA-release.apk",
+    "JustTrustMe": "Fuzion24/JustTrustMe",
+    "Inspeckage": "ac-pm/Inspeckage",
+    "HideMyApplist": "Dr-TSNG/Hide-My-Applist",
+    "XPrivacyLua": "M66B/XPrivacyLua",
+    "TrustMeAlready": "ViRb3/TrustMeAlready",
 }
-ROOT_CHECKER_URL = (
-    "https://f-droid.org/repo/com.joeykrim.rootcheck_1.apk"  # placeholder; user can swap
-)
+LSPOSED_REPO = "JingMatrix/LSPosed"  # maintained LSPosed fork with releases
+MAGISK_REPO = "topjohnwu/Magisk"  # Magisk app doubles as the root manager/checker
 
 
 @register
@@ -232,18 +234,46 @@ class EmulatorEngine(Engine):
              "https://gitlab.com/newbit/rootAVD.git", str(dest)], check=True, timeout=600)
         return script
 
+    def _latest_asset(
+        self, repo: str, exts: tuple[str, ...], prefer: tuple[str, ...] = ()
+    ) -> str:
+        """Resolve the latest release's asset URL matching one of ``exts``.
+
+        Prefers assets whose name contains all of ``prefer`` and avoids debug
+        builds when a non-debug asset exists.
+        """
+        import httpx
+
+        api = f"https://api.github.com/repos/{repo}/releases/latest"
+        try:
+            r = httpx.get(
+                api, timeout=60, follow_redirects=True,
+                headers={"User-Agent": "mobiot", "Accept": "application/vnd.github+json"},
+            )
+            r.raise_for_status()
+            assets = r.json().get("assets", [])
+        except Exception as exc:
+            raise EngineError("emulator", f"Cannot query releases for {repo}: {exc}") from exc
+        matches = [a for a in assets if a.get("name", "").lower().endswith(exts)]
+        if not matches:
+            raise EngineError("emulator", f"No {exts} asset in the latest release of {repo}.")
+        if prefer:
+            pref = [a for a in matches if all(p in a["name"].lower() for p in prefer)]
+            if pref:
+                return pref[0]["browser_download_url"]
+        non_debug = [a for a in matches if "debug" not in a["name"].lower()]
+        return (non_debug or matches)[0]["browser_download_url"]
+
     @action("Install LSPosed (Zygisk) into the rooted emulator.", background=True, mutating=True)
     def install_lsposed(self) -> dict[str, Any]:
         adb = self._require_running_adb()
-        zip_path = self._download(
-            "https://github.com/LSPosed/LSPosed/releases/latest/download/LSPosed-v1.9.2-zygisk-release.zip",
-            self.config.workspace / "modules" / "LSPosed.zip",
-        )
+        url = self._latest_asset(LSPOSED_REPO, (".zip",), prefer=("zygisk", "release"))
+        zip_path = self._download(url, self.config.workspace / "modules" / "LSPosed.zip")
         remote = "/data/local/tmp/LSPosed.zip"
         run([adb, "push", str(zip_path), remote], check=False)
         # Flash via Magisk (requires Magisk installed by root()).
         out = run([adb, "shell", "su", "-c", f"magisk --install-module {remote}"], check=False)
-        return {"attempted": True, "output": (out.stdout + out.stderr)[-1000:]}
+        return {"attempted": True, "source": url, "output": (out.stdout + out.stderr)[-1000:]}
 
     @action("Install curated common Xposed modules (or a chosen subset).",
             background=True, mutating=True)
@@ -252,11 +282,12 @@ class EmulatorEngine(Engine):
         selected = names or list(CURATED_MODULES)
         results = {}
         for name in selected:
-            url = CURATED_MODULES.get(name)
-            if not url:
+            repo = CURATED_MODULES.get(name)
+            if not repo:
                 results[name] = "unknown module"
                 continue
             try:
+                url = self._latest_asset(repo, (".apk",))
                 apk = self._download(url, self.config.workspace / "modules" / f"{name}.apk")
                 out = run([adb, "install", "-r", str(apk)], check=False)
                 results[name] = "installed" if "Success" in out.stdout else out.stdout.strip()[:120]
@@ -277,12 +308,13 @@ class EmulatorEngine(Engine):
         out = run([adb, "install", "-r", str(p)], check=False)
         return {"apk": str(p), "output": out.stdout.strip()[:200]}
 
-    @action("Install a root-checker app for quick verification.", mutating=True)
+    @action("Install the Magisk app (root manager + checker) for verification.", mutating=True)
     def install_root_checker(self) -> dict[str, Any]:
         adb = self._require_running_adb()
-        apk = self._download(ROOT_CHECKER_URL, self.config.workspace / "modules" / "rootchecker.apk")
+        url = self._latest_asset(MAGISK_REPO, (".apk",), prefer=("release",))
+        apk = self._download(url, self.config.workspace / "modules" / "Magisk.apk")
         out = run([adb, "install", "-r", str(apk)], check=False)
-        return {"output": out.stdout.strip()[:200]}
+        return {"source": url, "output": out.stdout.strip()[:200]}
 
     @action("Full pipeline: setup, start, root, LSPosed, modules, root checker.",
             background=True, mutating=True)
