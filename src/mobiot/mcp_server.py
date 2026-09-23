@@ -26,13 +26,58 @@ def build_server(config: Config) -> FastMCP:
     mcp = FastMCP(
         name="mobiot",
         instructions=(
-            "mobiot is a unified Mobile & IoT SAST/DAST/pentest toolkit. Tools are "
-            "grouped by engine (sast_, dast_, hooks_, runtime_, proxy_, network_, "
-            "iot_). Use for AUTHORISED security testing only. Start with "
-            "'mobiot_preflight' to see which engines are ready, and "
-            "'sast_start_server' before static/dynamic MobSF operations."
+            "mobiot is a unified, self-contained Mobile & IoT SAST/DAST/pentest "
+            "toolkit. Every capability is exposed here as a tool named "
+            "<engine>_<action> across engines: sast (static analysis, in-process, "
+            "no server needed), dast (Frida devices/dynamic), hooks (20+ inbuilt "
+            "Frida payloads), runtime (objection), proxy (mitmproxy incl. "
+            "WireGuard), network (device interception setup), iot (nmap/binwalk), "
+            "and sim (built-in device/Frida simulator needing nothing attached). "
+            "Use for AUTHORISED security testing only. "
+            "Discover the full surface with 'mobiot_capabilities'; check readiness "
+            "with 'mobiot_preflight'. Static analysis is direct/in-process: just "
+            "call 'sast_scan' with a file path (no server, no login). For hooks "
+            "with no device, pass device_id='sim'. Read the workspace layout with "
+            "'mobiot_workspace'."
         ),
     )
+
+    @mcp.tool(
+        name="mobiot_capabilities",
+        description="List every engine and action with parameters and flags.",
+    )
+    def capabilities() -> dict[str, Any]:
+        catalog: dict[str, Any] = {"version": get_version(), "engines": {}}
+        for engine_cls in engine_classes():
+            actions = []
+            for spec in engine_cls.actions():
+                sig = inspect.signature(spec.func)
+                params = {}
+                for pname, p in sig.parameters.items():
+                    if pname == "self":
+                        continue
+                    params[pname] = {
+                        "annotation": _annotation_name(p.annotation),
+                        "required": p.default is inspect.Parameter.empty,
+                        "default": None
+                        if p.default is inspect.Parameter.empty
+                        else repr(p.default),
+                    }
+                actions.append(
+                    {
+                        "tool": f"{engine_cls.name}_{spec.func.__name__}",
+                        "action": spec.name,
+                        "summary": spec.summary,
+                        "background": spec.background,
+                        "mutating": spec.mutating,
+                        "params": params,
+                    }
+                )
+            catalog["engines"][engine_cls.name] = {
+                "summary": engine_cls.summary,
+                "actions": actions,
+            }
+        return catalog
 
     @mcp.tool(name="mobiot_preflight", description="Health-check every engine.")
     def preflight() -> dict[str, Any]:
@@ -43,6 +88,23 @@ def build_server(config: Config) -> FastMCP:
             except Exception as exc:
                 report[eng.name] = {"engine": eng.name, "ready": False, "error": str(exc)}
         return report
+
+    @mcp.tool(
+        name="mobiot_workspace",
+        description="Report the workspace layout and where artefacts live.",
+    )
+    def workspace() -> dict[str, Any]:
+        from . import bundled
+
+        return {
+            "workspace": str(config.workspace),
+            "reports": str(config.reports_dir),
+            "captures": str(config.captures_dir),
+            "certs": str(config.certs_dir),
+            "logs": str(config.logs_dir),
+            "network": str(config.network_dir),
+            "bundled_tools": bundled.vendor_root() is not None,
+        }
 
     @mcp.tool(name="mobiot_version", description="Return the mobiot version.")
     def version() -> dict[str, str]:
@@ -59,6 +121,13 @@ def build_server(config: Config) -> FastMCP:
                 )
             )
     return mcp
+
+
+def _annotation_name(annotation: Any) -> str:
+    """Human-readable name for a parameter annotation."""
+    if annotation is inspect.Parameter.empty:
+        return "str"
+    return getattr(annotation, "__name__", str(annotation))
 
 
 def _make_tool(config: Config, engine_name: str, spec: ActionSpec):
@@ -98,6 +167,11 @@ def run_server(
     config = config or load_config()
     config.ensure_dirs()
     configure_logging(config.log_level, log_file=config.logs_dir / "mcp.log")
+    # Point engines at bundled tools when running from a standalone build so the
+    # MCP server has the same full, self-contained capability as the GUI/CLI.
+    from . import bundled
+
+    bundled.activate(config)
     mcp = build_server(config)
     if transport == "stdio":
         mcp.run()
