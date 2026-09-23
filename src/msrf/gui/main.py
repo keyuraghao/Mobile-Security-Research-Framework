@@ -22,7 +22,6 @@ from PyQt6.QtWidgets import (
     QDockWidget,
     QFileDialog,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
     QLineEdit,
     QMainWindow,
@@ -30,8 +29,6 @@ from PyQt6.QtWidgets import (
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -39,9 +36,10 @@ from PyQt6.QtWidgets import (
 
 from .. import get_version
 from ..config import Config, load_config
-from ..registry import all_engines, get_engine
+from ..registry import get_engine
 from . import theme
 from .appdata_view import AppDataView
+from .dashboard_view import DashboardView
 from .dast_view import DastView
 from .emulator_screen import EmulatorScreen
 from .emulator_view import EmulatorView
@@ -51,7 +49,6 @@ from .hooks_view import HooksView
 from .icon import app_icon
 from .sast_view import SASTView
 from .settings_view import SettingsView
-from .table_tools import install_copy_menu
 from .worker import Worker
 
 
@@ -114,7 +111,8 @@ class MainWindow(QMainWindow):
 
         self.sast_view = SASTView(self)
         self.findings_view = FindingsView(self)
-        self.tabs.addTab(self._tab_dashboard(), "Dashboard")
+        self.dashboard_view = DashboardView(self)
+        self.tabs.addTab(self.dashboard_view, "Dashboard")
         self.tabs.addTab(self.sast_view, "Static (SAST)")
         self.tabs.addTab(HooksView(self), "Frida Hooks")
         self.tabs.addTab(DastView(self), "Dynamic (DAST)")
@@ -380,57 +378,8 @@ class MainWindow(QMainWindow):
 
     # -- Dashboard -------------------------------------------------------
 
-    def _tab_dashboard(self) -> QWidget:
-        w = QWidget()
-        lay = QVBoxLayout(w)
-        head = QHBoxLayout()
-        head.addWidget(QLabel("<b>Engine readiness &amp; connection</b>"))
-        head.addStretch(1)
-        refresh = _button("Refresh", primary=True)
-        head.addWidget(refresh)
-        lay.addLayout(head)
-
-        self.dash_table = QTableWidget(0, 3)
-        self.dash_table.setHorizontalHeaderLabels(["Engine", "Status", "Details"])
-        self.dash_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        self.dash_table.verticalHeader().setVisible(False)
-        self.dash_table.setAlternatingRowColors(True)
-        install_copy_menu(self.dash_table, self.status)
-        lay.addWidget(self.dash_table, 1)
-
-        refresh.clicked.connect(self._refresh_dashboard)
-        self._refresh_dashboard()
-        return w
-
     def _refresh_dashboard(self) -> None:
-        def work():
-            report = {}
-            for eng in all_engines(self.config):
-                try:
-                    report[eng.name] = eng.preflight()
-                except Exception as exc:
-                    report[eng.name] = {"ready": False, "details": {"error": str(exc)}}
-            return report
-
-        self.submit(work, on_result=self._fill_dashboard)
-
-    def _fill_dashboard(self, report: dict) -> None:
-        self.dash_table.setRowCount(0)
-        for name, data in sorted(report.items()):
-            r = self.dash_table.rowCount()
-            self.dash_table.insertRow(r)
-            self.dash_table.setItem(r, 0, QTableWidgetItem(name))
-            ready = data.get("ready")
-            cell = QTableWidgetItem("Ready" if ready else "Not ready")
-            cell.setForeground(
-                Qt.GlobalColor.darkGreen if ready else Qt.GlobalColor.darkRed
-            )
-            self.dash_table.setItem(r, 1, cell)
-            self.dash_table.setItem(
-                r, 2, QTableWidgetItem(json.dumps(data.get("details", {}), default=str))
-            )
-        self.dash_table.resizeColumnsToContents()
-        self.dash_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.dashboard_view.refresh()
 
     # -- generic action tabs ---------------------------------------------
 

@@ -16,6 +16,10 @@ Mobile Security Research Framework glues best-in-class security engines together
 
 The desktop app (`msrf ui`). Every picture is generated from the current build by `packaging/capture_screenshots.py`, which scans the DIVA sample app for real.
 
+| Dashboard: engine readiness and findings charts |
+|---|
+| ![Dashboard](docs/screenshots/01_dashboard.png) |
+
 | Static analysis findings, most severe first | Internal file browser (binary manifest decoded) |
 |---|---|
 | ![SAST findings](docs/screenshots/02_sast_findings.png) | ![Files](docs/screenshots/05_sast_files.png) |

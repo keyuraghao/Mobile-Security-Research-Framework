@@ -4,6 +4,11 @@ All notable changes to **msrf** are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-09-23
+
+### Changed
+- **Dashboard redesigned.** The engine table now shows just the name and status, with an "i" button per engine that opens its full details in a dialog. Alongside it are charts of the findings collected so far: counts by severity (bar and donut), findings by source, and an engine-readiness donut. Charts are drawn with QPainter (no extra dependency) and follow the light and dark theme.
+
 ## [0.3.8] - 2026-09-23
 
 ### Added

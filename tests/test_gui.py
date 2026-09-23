@@ -361,3 +361,29 @@ def test_drag_drop_loads_apk_into_static(qapp, tmp_path):
     win.dropEvent(QDropEvent(pos, *args))
     assert win.sast_view.path.text() == str(apk)
     assert win.tabs.currentWidget() is win.sast_view
+
+
+def test_dashboard_shows_engines_and_finding_charts(qapp, tmp_path):
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    dash = win.dashboard_view
+    # feed known engine + findings data straight into the fill path
+    dash._fill({
+        "engines": {"sast": {"ready": True, "details": {"x": 1}},
+                    "iot": {"ready": False, "details": {"error": "no nmap"}}},
+        "findings": [
+            {"severity": "high", "source": "sast"},
+            {"severity": "high", "source": "sast"},
+            {"severity": "info", "source": "manual"},
+        ],
+    })
+    assert dash.table.rowCount() == 2
+    assert dash.table.item(0, 1).text() in ("Ready", "Not ready")
+    assert dash.table.cellWidget(0, 2) is not None      # info button present
+    assert dash.c_sev_bar._data[0][0] == "High"          # most severe first
+    assert dash.c_sev_bar._data[0][1] == 2
+    assert "2/2" not in dash.summary.text()              # 1 of 2 ready
+    assert "1/2 engines ready" in dash.summary.text()
+    assert "3 findings" in dash.summary.text()

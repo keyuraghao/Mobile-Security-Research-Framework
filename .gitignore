@@ -37,3 +37,7 @@ Test_Applications/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Never commit reference PDFs (e.g. vendor user guides)
+*.pdf
+coresec_core-impact_userguide.pdf

@@ -94,7 +94,7 @@ def main() -> int:
         win.grab().save(str(path))
         print(f"  saved {path.relative_to(ROOT) if path.is_relative_to(ROOT) else path}")
 
-    # (No Dashboard picture: it lists local tool paths and the host's LAN IP.)
+    # (Dashboard captured at the end, once findings exist for its charts.)
     settle()
 
     # Static analysis: real scan of the sample APK.
@@ -180,6 +180,12 @@ def main() -> int:
     settle()
     tab("Findings")
     shot("10_findings.png")
+
+    # Dashboard: engine readiness + findings charts (findings now populated).
+    win.dashboard_view.refresh()
+    settle()
+    tab("Dashboard")
+    shot("01_dashboard.png")
 
     # Theme pair on the SAST findings view.
     tab("Static (SAST)")
