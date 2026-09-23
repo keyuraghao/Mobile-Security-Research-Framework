@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-22
+
+Professional desktop UI, real analyzer output, and a full pentest workflow.
+
+### Added
+- **Professional classic-Windows UI**: menu bar, tool bar, status bar with live connection info, an application icon, an About dialog, and app metadata.
+- **Tabular static analysis**: every MobSF analyzer rendered as sortable tables (findings, permissions, certificate, manifest, network, code analysis, binary/NDK, API, malware perms, trackers, URLs/domains, secrets, strings, components) plus a Raw JSON tab.
+- **APK internal file browser**: browse the app's files and view their contents (new `sast.files` / `sast.file_content`).
+- **Dynamic (DAST) techniques panel** with dropdowns: enumeration, the full Frida hook library, and objection runtime operations.
+- **Managed rooted emulator** (`emulator` engine + tab): provision an AVD, root it with Magisk, install LSPosed + curated Xposed modules + a root checker; config dropdowns and an all-in-one Provision.
+- **App-data database grabber** (`appdata` engine + tab): pull a running app's SQLite databases and shared_prefs (from a device or simulator sample data) and open them (tables/rows, XML).
+- **Findings store** (`findings` engine + tab): central results, auto-import from scans, a "+" dialog to add your own, and delete.
+- **Multi-format reporting**: PDF, HTML, XLSX, CSV, JSON, Markdown.
+- CLI now prints plain JSON (pipes into `jq`).
+
 ## [0.2.0] - 2026-09-22
 
 Fully self-contained desktop app: download one file per OS, run it, nothing else required.
@@ -66,6 +81,7 @@ Initial public release.
 - **Cross-platform** throughout: tool discovery via `PATH`, no hardcoded paths,
   `platformdirs` workspace, shell-free subprocess execution.
 
-[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.0
 [0.2.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.2.0
 [0.1.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.1.0

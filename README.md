@@ -18,6 +18,10 @@ The cross-platform desktop app (`mobiot ui`), a classic Windows-style applicatio
 |---|---|
 | ![DAST](docs/screenshots/07_dast.png) | ![Help](docs/screenshots/08_help.png) |
 
+| Managed rooted emulator | Findings & reporting |
+|---|---|
+| ![Emulator](docs/screenshots/09_emulator.png) | ![Findings](docs/screenshots/10_findings.png) |
+
 ## Download
 
 Prebuilt standalone desktop-app binaries for Linux, Windows and macOS are attached to each [GitHub Release](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/latest). Download the one for your OS and run it, no Python required:
@@ -49,6 +53,9 @@ Prefer pip? The same release also ships a universal wheel and sdist (`pip instal
 | `network` | adb + mitmproxy | Set up the DAST network anywhere: host IPs, CA install, device proxy, WireGuard tunnel. |
 | `iot` | nmap + binwalk | Host discovery, port/service scanning, firmware signature scan and extraction. |
 | `sim` | built-in | A self-contained DIVA-like device and Frida-script simulator; generate and test payloads with nothing external attached. |
+| `emulator` | Android SDK | Provision and drive a rooted Android emulator (Magisk + LSPosed + common Xposed modules + root checker). Runs where the SDK and host virtualization exist. |
+| `appdata` | adb + sqlite | Grab a running app's databases and shared_prefs (from a device or the simulator sample data) and open them (SQLite tables/rows, XML). |
+| `findings` | built-in | Central store of all findings; auto-imports static-analysis results, accepts custom findings, and generates reports in PDF/HTML/XLSX/CSV/JSON/Markdown. |
 
 ## Requirements
 
