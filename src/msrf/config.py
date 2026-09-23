@@ -171,6 +171,56 @@ class Config(BaseSettings):
             path.mkdir(parents=True, exist_ok=True)
 
 
+#: Settings the Settings tab persists, grouped by TOML section (""=top level).
+#: Each value is the field name on the corresponding config object.
+PERSISTED_FIELDS: dict[str, list[str]] = {
+    "": ["workspace", "log_level"],
+    "mobsf": ["url", "port", "startup_timeout", "offline_profile", "use_system_jadx",
+              "api_only", "disable_authentication", "async_analysis",
+              "domain_malware_scan", "vt_enabled"],
+    "proxy": ["listen_host", "listen_port", "mode", "wireguard_port", "web_port"],
+    "emulator": ["avd_name", "api_level", "image_type", "abi", "headless", "boot_timeout"],
+}
+
+
+def _toml_value(value: Any) -> str:
+    """Serialise a scalar to a TOML literal (str/bool/int/float/Path only)."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    # Path or str: quote, escaping backslashes (Windows paths) and quotes.
+    text = str(value).replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{text}"'
+
+
+def dump_toml(config: Config) -> str:
+    """Render the persistable subset of ``config`` as TOML text."""
+    lines: list[str] = ["# msrf configuration (written by the Settings tab).", ""]
+    for field in PERSISTED_FIELDS[""]:
+        lines.append(f"{field} = {_toml_value(getattr(config, field))}")
+    for section, fields in PERSISTED_FIELDS.items():
+        if section == "":
+            continue
+        obj = getattr(config, section)
+        lines += ["", f"[{section}]"]
+        for field in fields:
+            lines.append(f"{field} = {_toml_value(getattr(obj, field))}")
+    return "\n".join(lines) + "\n"
+
+
+def save_config(config: Config, path: Path | str | None = None) -> Path:
+    """Write ``config`` to a TOML file (default: the per-user config path).
+
+    Returns the path written. The file is picked up by :func:`load_config` on
+    the next launch.
+    """
+    target = Path(path).expanduser() if path else DEFAULT_CONFIG_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(dump_toml(config), encoding="utf-8")
+    return target
+
+
 def _read_toml(path: Path) -> dict[str, Any]:
     try:
         with path.open("rb") as handle:

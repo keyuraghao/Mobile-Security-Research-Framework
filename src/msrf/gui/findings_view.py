@@ -26,6 +26,7 @@ from PyQt6.QtWidgets import (
 
 from . import theme
 from .sast_view import _sev_brush, _Table
+from .table_tools import SearchBar
 
 _SEVERITIES = ["high", "warning", "info", "secure", "hotspot", "note"]
 
@@ -94,6 +95,8 @@ class FindingsView(QWidget):
         lay.addLayout(bar)
 
         self.table = _Table(["Severity", "Source", "Title", "Target", "Created"])
+        self.search = SearchBar(self.table, self.host.status, "Filter findings…")
+        lay.addWidget(self.search)
         lay.addWidget(self.table, 1)
 
         add.clicked.connect(self._add)
@@ -132,6 +135,8 @@ class FindingsView(QWidget):
             self._sorted_once = True
         self.table.setSortingEnabled(True)
         self.table.resizeColumnsToContents()
+        if hasattr(self, "search"):
+            self.search.refresh()
 
     def _add(self) -> None:
         dlg = _AddDialog(self)

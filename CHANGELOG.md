@@ -4,6 +4,23 @@ All notable changes to **msrf** are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-09-23
+
+### Added
+- **Frida hooks tab rebuilt** into Library, Custom hook and Multi-hook. Copy the current script to the clipboard or send it to the editor; in Custom, type or paste any Frida JavaScript and load or save it anywhere; in Multi-hook, list many classes and methods (and library hooks) and run them all on one app in a single injection. New engine actions back these: `hooks save_script`, `hooks combine`, and a `source` argument on `hooks test`.
+- **Settings tab**: theme, workspace, log level, MobSF offline-profile toggles, proxy ports and emulator defaults, saved to the config file and restored next launch. Theme and emulator defaults apply immediately.
+- **Quality-of-life**: drag an APK or IPA onto the window to analyse it; right-click any results table to copy rows as TSV, JSON or Markdown; a filter box on the Findings tab; the window remembers its size and position; file dialogs remember the last folder; File menu gains Open Workspace Folder and Settings (Ctrl+,).
+
+### Fixed
+- CLI: a log level set in the config file or environment is no longer overridden by the default, and a bad `--params` value reports a clean error instead of a traceback.
+- Findings: an unreadable store is backed up instead of being silently overwritten with an empty list.
+- Frida test: a spawned app is killed if injection fails, so it is not left frozen on the device.
+- App data: pull rejects device paths that escape the workspace.
+- Internals: background processes no longer leak a file handle per start, and a fast command is never wrongly reported as timed out.
+
+### Changed
+- Repository moved to github.com/keyuraghao/Mobile-Security-Research-Framework; links updated.
+
 ## [0.3.7] - 2026-09-22
 
 ### Fixed
@@ -44,7 +61,7 @@ All notable changes to **msrf** are documented here. The format follows [Keep a 
 ## [0.3.4] - 2026-09-22
 
 ### Changed
-- **Renamed the package, command and pip distribution from `mobiot` to `msrf`** to match the product name (Mobile Security and Research Framework). The CLI/MCP command is now `msrf` (with `msrf-mcp` and `msrf-gui`), the Python package is `msrf`, the pip distribution and wheel are `msrf-<version>`, environment variables use the `MSRF_` prefix, and MCP tools are `msrf_*`. Release titles and all downloadable app files already use the product name / `MSRF-*`.
+- **Renamed the package, command and pip distribution from `mobiot` to `msrf`** to match the product name (Mobile Security Research Framework). The CLI/MCP command is now `msrf` (with `msrf-mcp` and `msrf-gui`), the Python package is `msrf`, the pip distribution and wheel are `msrf-<version>`, environment variables use the `MSRF_` prefix, and MCP tools are `msrf_*`. Release titles and all downloadable app files already use the product name / `MSRF-*`.
 
 ## [0.3.3] - 2026-09-22
 
@@ -54,7 +71,7 @@ All notable changes to **msrf** are documented here. The format follows [Keep a 
 - **Application icon / favicon** shipped as `icon.ico` (multi-size) and `icon.png`, used for the window, the installer, and the built executable.
 
 ### Changed
-- **Renamed to "Mobile Security and Research Framework"** across the desktop app (window title, About dialog, display name), Help tab, installer and README. The package, CLI command and MCP server name remain `msrf` for compatibility.
+- **Renamed to "Mobile Security Research Framework"** across the desktop app (window title, About dialog, display name), Help tab, installer and README. The package, CLI command and MCP server name remain `msrf` for compatibility.
 
 ## [0.3.2] - 2026-09-22
 
@@ -133,9 +150,9 @@ Initial public release.
 - **MobSF slim/offline profile** (on by default): deterministic `MOBSF_SECRET_KEY` (skips the first-run block that downloads ~104MB JADX and can hang), system `jadx`, headless REST-only, no telemetry; the vendored MobSF source is patched to make its startup update-check opt-in for guaranteed zero egress.
 - **Cross-platform** throughout: tool discovery via `PATH`, no hardcoded paths, `platformdirs` workspace, shell-free subprocess execution.
 
-[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.3.2...HEAD
-[0.3.2]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.2
-[0.3.1]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.1
-[0.3.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.0
-[0.2.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.2.0
-[0.1.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.1.0
+[Unreleased]: https://github.com/keyuraghao/Mobile-Security-Research-Framework/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/keyuraghao/Mobile-Security-Research-Framework/releases/tag/v0.3.2
+[0.3.1]: https://github.com/keyuraghao/Mobile-Security-Research-Framework/releases/tag/v0.3.1
+[0.3.0]: https://github.com/keyuraghao/Mobile-Security-Research-Framework/releases/tag/v0.3.0
+[0.2.0]: https://github.com/keyuraghao/Mobile-Security-Research-Framework/releases/tag/v0.2.0
+[0.1.0]: https://github.com/keyuraghao/Mobile-Security-Research-Framework/releases/tag/v0.1.0

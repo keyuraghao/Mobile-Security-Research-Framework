@@ -11,8 +11,6 @@ from __future__ import annotations
 import lzma
 from pathlib import Path
 
-import httpx
-
 from .exceptions import EngineError
 from .logging import get_logger
 
@@ -88,6 +86,7 @@ def ensure_frida_server(
     # 3. Download + decompress.
     url = _FRIDA_RELEASE.format(version=version, arch=arch)
     log.info("Downloading frida-server %s (%s) from %s", version, arch, url)
+    import httpx  # lazy: keeps startup fast when no download is needed
     try:
         with httpx.stream("GET", url, follow_redirects=True, timeout=timeout) as resp:
             resp.raise_for_status()

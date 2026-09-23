@@ -8,6 +8,7 @@ on worker threads so the UI stays responsive.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
 from collections.abc import Callable
@@ -49,6 +50,8 @@ from .help_view import HelpView
 from .hooks_view import HooksView
 from .icon import app_icon
 from .sast_view import SASTView
+from .settings_view import SettingsView
+from .table_tools import install_copy_menu
 from .worker import Worker
 
 
@@ -90,10 +93,16 @@ class MainWindow(QMainWindow):
         self._settings = QSettings()
 
         self.setWindowTitle(
-            f"Mobile Security and Research Framework  {get_version()}"
+            f"Mobile Security Research Framework  {get_version()}"
         )
         self.setWindowIcon(app_icon())
+        self.setAcceptDrops(True)  # drop an APK/IPA anywhere to analyse it
         self.resize(1180, 760)
+        # Restore the last window size/position, if any (per-viewer convenience).
+        geo = self._settings.value("geometry")
+        if geo is not None:
+            with contextlib.suppress(Exception):
+                self.restoreGeometry(geo)
 
         self._build_menu()
         self._build_toolbar()
@@ -115,6 +124,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self._tab_network(), "Network")
         self.tabs.addTab(self._tab_iot(), "IoT")
         self.tabs.addTab(self.findings_view, "Findings")
+        self.tabs.addTab(SettingsView(self), "Settings")
         self.tabs.addTab(HelpView(), "Help")
 
         # Dockable live emulator screen: side-by-side with the tabs, or floated
@@ -199,6 +209,13 @@ class MainWindow(QMainWindow):
         act_open.setShortcut("Ctrl+O")
         act_open.triggered.connect(self._menu_open_app)
         m_file.addAction(act_open)
+        act_ws = QAction("Open &Workspace Folder", self)
+        act_ws.triggered.connect(self._open_workspace)
+        m_file.addAction(act_ws)
+        act_settings = QAction("&Settings", self)
+        act_settings.setShortcut("Ctrl+,")
+        act_settings.triggered.connect(self._open_settings)
+        m_file.addAction(act_settings)
         m_file.addSeparator()
         act_exit = QAction("E&xit", self)
         act_exit.setShortcut("Ctrl+Q")
@@ -274,26 +291,67 @@ class MainWindow(QMainWindow):
         box.setIconPixmap(app_icon().pixmap(64, 64))
         box.setTextFormat(Qt.TextFormat.RichText)
         box.setText(
-            f"<h2>Mobile Security and Research Framework</h2>"
+            f"<h2>Mobile Security Research Framework</h2>"
             f"<p>version {get_version()}</p>"
             "<p>Unified, self-contained <b>Mobile &amp; IoT SAST / DAST / "
             "penetration-testing</b> toolkit.</p>"
             "<p>Bundles MobSF, Frida, objection, mitmproxy, nmap and binwalk behind "
             "one desktop app, a CLI and an MCP server.</p>"
             "<p>License: GPL-3.0-only<br>"
-            'Project: <a href="https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest">'
-            "github.com/keyuraghao/Mobile_SAST_DAST_Pentest</a></p>"
+            'Project: <a href="https://github.com/keyuraghao/Mobile-Security-Research-Framework">'
+            "github.com/keyuraghao/Mobile-Security-Research-Framework</a></p>"
             "<p style='color:#a33'>For authorised security testing only.</p>"
         )
         box.exec()
 
     def _menu_open_app(self) -> None:
+        start_dir = str(self._settings.value("last_app_dir", ""))
         path, _ = QFileDialog.getOpenFileName(
-            self, "Select application", "", "Mobile apps (*.apk *.ipa);;All files (*)"
+            self, "Select application", start_dir,
+            "Mobile apps (*.apk *.ipa);;All files (*)"
         )
         if path:
-            self.sast_view.path.setText(path)
-            self.tabs.setCurrentWidget(self.sast_view)
+            self.load_app(path)
+
+    def _open_workspace(self) -> None:
+        from PyQt6.QtCore import QUrl
+        from PyQt6.QtGui import QDesktopServices
+
+        self.config.ensure_dirs()
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.config.workspace)))
+
+    def _open_settings(self) -> None:
+        for i in range(self.tabs.count()):
+            if self.tabs.tabText(i) == "Settings":
+                self.tabs.setCurrentIndex(i)
+                return
+
+    def load_app(self, path: str) -> None:
+        """Load an app path into the Static tab (used by Open and drag-drop)."""
+        from pathlib import Path as _P
+
+        self._settings.setValue("last_app_dir", str(_P(path).parent))
+        self.sast_view.path.setText(path)
+        self.tabs.setCurrentWidget(self.sast_view)
+
+    def dragEnterEvent(self, event) -> None:  # noqa: N802 - Qt override
+        urls = event.mimeData().urls() if event.mimeData().hasUrls() else []
+        if any(u.toLocalFile().lower().endswith((".apk", ".ipa")) for u in urls):
+            event.acceptProposedAction()
+
+    def dropEvent(self, event) -> None:  # noqa: N802 - Qt override
+        for u in event.mimeData().urls():
+            p = u.toLocalFile()
+            if p.lower().endswith((".apk", ".ipa")):
+                self.load_app(p)
+                self.status(f"Loaded {p}", 5000)
+                break
+
+    def closeEvent(self, event) -> None:  # noqa: N802 - Qt override
+        # Remember the window size/position for next launch.
+        with contextlib.suppress(Exception):
+            self._settings.setValue("geometry", self.saveGeometry())
+        super().closeEvent(event)
 
     # -- connection info -------------------------------------------------
 
@@ -337,6 +395,7 @@ class MainWindow(QMainWindow):
         self.dash_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         self.dash_table.verticalHeader().setVisible(False)
         self.dash_table.setAlternatingRowColors(True)
+        install_copy_menu(self.dash_table, self.status)
         lay.addWidget(self.dash_table, 1)
 
         refresh.clicked.connect(self._refresh_dashboard)
@@ -495,7 +554,7 @@ def run() -> int:
     bundled.activate(config)
     app = QApplication(sys.argv)
     app.setApplicationName("msrf")  # technical id (QSettings/platform); stable
-    app.setApplicationDisplayName("Mobile Security and Research Framework")
+    app.setApplicationDisplayName("Mobile Security Research Framework")
     app.setApplicationVersion(get_version())
     app.setOrganizationName("msrf")
     app.setDesktopFileName("msrf")

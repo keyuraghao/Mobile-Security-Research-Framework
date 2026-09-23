@@ -12,14 +12,14 @@
 ; All relative paths below (and /DSource) resolve from the repository root.
 SourceDir=..
 AppId={{B3E2B7A6-9C4D-4E2A-8F1B-2A9C6D3E7F10}
-AppName=Mobile Security and Research Framework
+AppName=Mobile Security Research Framework
 AppVersion={#Version}
-AppVerName=Mobile Security and Research Framework {#Version}
+AppVerName=Mobile Security Research Framework {#Version}
 AppPublisher=Keyur Aghao
-AppPublisherURL=https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest
-AppSupportURL=https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/issues
-DefaultDirName={autopf}\Mobile Security and Research Framework
-DefaultGroupName=Mobile Security and Research Framework
+AppPublisherURL=https://github.com/keyuraghao/Mobile-Security-Research-Framework
+AppSupportURL=https://github.com/keyuraghao/Mobile-Security-Research-Framework/issues
+DefaultDirName={autopf}\Mobile Security Research Framework
+DefaultGroupName=Mobile Security Research Framework
 UninstallDisplayIcon={app}\msrf.exe
 OutputDir=dist
 OutputBaseFilename=MSRF-{#Version}-setup
@@ -41,15 +41,15 @@ Name: "addtopath"; Description: "Add the msrf command-line tool to PATH (for the
 Source: "{#Source}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Mobile Security and Research Framework"; Filename: "{app}\msrf.exe"; Comment: "Mobile & IoT SAST/DAST/pentest toolkit"
-Name: "{group}\Uninstall Mobile Security and Research Framework"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\Mobile Security and Research Framework"; Filename: "{app}\msrf.exe"; Tasks: desktopicon
+Name: "{group}\Mobile Security Research Framework"; Filename: "{app}\msrf.exe"; Comment: "Mobile & IoT SAST/DAST/pentest toolkit"
+Name: "{group}\Uninstall Mobile Security Research Framework"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\Mobile Security Research Framework"; Filename: "{app}\msrf.exe"; Tasks: desktopicon
 
 [Registry]
 Root: HKA; Subkey: "{code:PathRegKey}"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; Tasks: addtopath; Check: NeedsAddPath(ExpandConstant('{app}'))
 
 [Run]
-Filename: "{app}\msrf.exe"; Description: "Launch Mobile Security and Research Framework"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\msrf.exe"; Description: "Launch Mobile Security Research Framework"; Flags: nowait postinstall skipifsilent
 
 [Code]
 // After the app files are removed, offer to remove the per-user workspace

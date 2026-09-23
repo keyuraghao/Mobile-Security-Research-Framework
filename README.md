@@ -1,14 +1,14 @@
-# Mobile Security and Research Framework
+# Mobile Security Research Framework
 
-[![CI](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/actions/workflows/ci.yml/badge.svg)](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/keyuraghao/Mobile_SAST_DAST_Pentest?sort=semver)](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/keyuraghao/Mobile_SAST_DAST_Pentest/total)](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases)
+[![CI](https://github.com/keyuraghao/Mobile-Security-Research-Framework/actions/workflows/ci.yml/badge.svg)](https://github.com/keyuraghao/Mobile-Security-Research-Framework/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/keyuraghao/Mobile-Security-Research-Framework?sort=semver)](https://github.com/keyuraghao/Mobile-Security-Research-Framework/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/keyuraghao/Mobile-Security-Research-Framework/total)](https://github.com/keyuraghao/Mobile-Security-Research-Framework/releases)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue) ![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
 
 Unified, cross-platform Mobile and IoT SAST / DAST / penetration-testing toolkit with a desktop app, a CLI, and an MCP server over MobSF, Frida, objection, mitmproxy, nmap, and binwalk.
 
-Mobile Security and Research Framework glues best-in-class security engines together behind one consistent interface so you (or an AI agent) can run an assessment end to end: static analysis, dynamic analysis, runtime instrumentation, traffic interception from anywhere, and IoT/firmware recon.
+Mobile Security Research Framework glues best-in-class security engines together behind one consistent interface so you (or an AI agent) can run an assessment end to end: static analysis, dynamic analysis, runtime instrumentation, traffic interception from anywhere, and IoT/firmware recon.
 
 > Authorised testing only. This toolkit is for assessing applications, devices, and networks that you own or have explicit written permission to test. You are responsible for complying with all applicable laws.
 
@@ -42,7 +42,7 @@ The desktop app (`msrf ui`). Every picture is generated from the current build b
 
 ## Download
 
-Every [GitHub Release](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/latest) ships self-contained builds (MobSF, Java runtime, jadx, adb, Frida, mitmproxy and objection are bundled; nothing else to install):
+Every [GitHub Release](https://github.com/keyuraghao/Mobile-Security-Research-Framework/releases/latest) ships self-contained builds (MobSF, Java runtime, jadx, adb, Frida, mitmproxy and objection are bundled; nothing else to install):
 
 - Windows installer: `MSRF-<version>-setup.exe` (Start menu and desktop shortcuts, optional `msrf` on PATH, clean uninstall)
 - Windows portable: `MSRF-windows-x86_64.zip`

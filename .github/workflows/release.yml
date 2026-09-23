@@ -86,7 +86,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
-          name: Mobile Security and Research Framework ${{ steps.tag.outputs.name }}
+          name: Mobile Security Research Framework ${{ steps.tag.outputs.name }}
           body_path: RELEASE_NOTES.md
           files: |
             ${{ matrix.artifact }}.zip
@@ -98,7 +98,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
-          name: Mobile Security and Research Framework ${{ steps.tag.outputs.name }}
+          name: Mobile Security Research Framework ${{ steps.tag.outputs.name }}
           body_path: RELEASE_NOTES.md
           files: |
             dist/MSRF-*-setup.exe
@@ -133,7 +133,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
-          name: Mobile Security and Research Framework ${{ steps.tag.outputs.name }}
+          name: Mobile Security Research Framework ${{ steps.tag.outputs.name }}
           body_path: RELEASE_NOTES.md
           files: |
             dist/*.whl

@@ -60,6 +60,7 @@ def test_mainwindow_builds_all_tabs(qapp, tmp_path):
         "Network",
         "IoT",
         "Findings",
+        "Settings",
         "Help",
     ]
 
@@ -263,3 +264,100 @@ def test_dast_simulator_target_enumerates_and_explains_hardware_only(qapp, tmp_p
     view._run()
     _drain(qapp, win)
     assert "needs a real device or the emulator" in view.output.toPlainText()
+
+
+def test_settings_save_and_reload_roundtrip(qapp, tmp_path, monkeypatch):
+    import msrf.config as cfgmod
+    from msrf.config import load_config
+
+    # Redirect the default config path into the temp dir.
+    cfg_path = tmp_path / "config.toml"
+    monkeypatch.setattr(cfgmod, "DEFAULT_CONFIG_PATH", cfg_path)
+    from msrf.gui import settings_view
+    monkeypatch.setattr(settings_view, "DEFAULT_CONFIG_PATH", cfg_path)
+
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    view = next(win.tabs.widget(i) for i in range(win.tabs.count())
+                if isinstance(win.tabs.widget(i), settings_view.SettingsView))
+    view.mobsf_port.setValue(8222)
+    view.emu_api.setValue(29)
+    view.vt_enabled.setChecked(True)
+    view._save()
+    assert cfg_path.is_file()
+    reloaded = load_config(cfg_path)
+    assert reloaded.mobsf.port == 8222
+    assert reloaded.emulator.api_level == 29
+    assert reloaded.mobsf.vt_enabled is True
+
+
+def test_window_geometry_is_remembered(qapp, tmp_path):
+    from PyQt6.QtGui import QCloseEvent
+
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    win._settings.remove("geometry")
+    win.resize(1000, 700)
+    win.closeEvent(QCloseEvent())
+    assert win._settings.value("geometry") is not None
+
+
+def test_findings_filter_hides_nonmatching_rows(qapp, tmp_path):
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    fv = win.findings_view
+    fv._fill([
+        {"severity": "high", "source": "sast", "title": "SQL injection", "id": "1"},
+        {"severity": "info", "source": "manual", "title": "verbose logging", "id": "2"},
+    ])
+    fv.search.edit.setText("sql")
+    assert not fv.table.isRowHidden(0)
+    assert fv.table.isRowHidden(1)
+    fv.search.edit.clear()
+    assert not fv.table.isRowHidden(1)
+
+
+def test_table_copy_helpers_cover_selection(qapp, tmp_path):
+    from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem
+
+    from msrf.gui.table_tools import as_json, as_markdown, as_tsv, selected_grid
+
+    t = QTableWidget(2, 2)
+    t.setHorizontalHeaderLabels(["Severity", "Issue"])
+    for r, (s, i) in enumerate([("high", "a"), ("info", "b")]):
+        t.setItem(r, 0, QTableWidgetItem(s))
+        t.setItem(r, 1, QTableWidgetItem(i))
+    t.selectAll()
+    headers, rows = selected_grid(t)
+    assert headers == ["Severity", "Issue"] and len(rows) == 2
+    assert as_tsv(headers, rows).splitlines()[1] == "high\ta"
+    assert '"Severity": "high"' in as_json(headers, rows)
+    assert as_markdown(headers, rows).startswith("| Severity | Issue |")
+
+
+def test_drag_drop_loads_apk_into_static(qapp, tmp_path):
+    from PyQt6.QtCore import QMimeData, QPointF, Qt, QUrl
+    from PyQt6.QtGui import QDragEnterEvent, QDropEvent
+
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    apk = tmp_path / "sample.apk"
+    apk.write_bytes(b"PK\x03\x04")
+    md = QMimeData()
+    md.setUrls([QUrl.fromLocalFile(str(apk))])
+    pos = QPointF(1, 1)
+    args = (Qt.DropAction.CopyAction, md, Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier)
+    enter = QDragEnterEvent(pos.toPoint(), *args)
+    win.dragEnterEvent(enter)
+    assert enter.isAccepted()
+    win.dropEvent(QDropEvent(pos, *args))
+    assert win.sast_view.path.text() == str(apk)
+    assert win.tabs.currentWidget() is win.sast_view

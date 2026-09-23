@@ -32,6 +32,7 @@ from PyQt6.QtWidgets import (
 )
 
 from . import theme
+from .table_tools import install_copy_menu
 
 
 def _sev_brush(severity: str) -> QBrush | None:
@@ -55,6 +56,7 @@ class _Table(QTableWidget):
         )
         self.setWordWrap(False)
         self._sorted_once = False
+        install_copy_menu(self)  # right-click: copy rows as TSV / JSON / Markdown
 
     def fill(self, rows: list[list[Any]], sev_col: int | None = None) -> None:
         self.setSortingEnabled(False)

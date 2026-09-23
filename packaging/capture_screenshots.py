@@ -45,7 +45,7 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     app = QApplication(sys.argv)
     app.setApplicationName("msrf")
-    app.setApplicationDisplayName("Mobile Security and Research Framework")
+    app.setApplicationDisplayName("Mobile Security Research Framework")
     theme.apply(app, "light")
 
     # A neutral, fixed demo workspace so the pictures never show the
