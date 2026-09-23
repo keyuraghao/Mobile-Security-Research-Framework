@@ -78,6 +78,10 @@ def main(
     cfg = load_config(config, **overrides)
     cfg.ensure_dirs()
     configure_logging(cfg.log_level, log_file=cfg.logs_dir / "mobiot.log")
+    # Point engines at bundled tools when running from a standalone build.
+    from . import bundled
+
+    bundled.activate(cfg)
     _STATE["config"] = cfg
 
 

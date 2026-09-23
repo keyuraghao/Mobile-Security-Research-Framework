@@ -62,6 +62,11 @@ class MobSFConfig(BaseSettings):
     #: Persisted Django secret key; setting it skips MobSF's first-run block
     #: (which is what triggers the JADX download). Auto-generated if unset.
     secret_key: str | None = Field(default=None)
+    #: Run MobSF in-process via waitress instead of a subprocess. None = auto
+    #: (True in a frozen standalone build, False otherwise). Set explicitly to
+    #: force one mode. In-process serving is what makes the standalone app work
+    #: without a separate MobSF install or interpreter.
+    in_process: bool | None = Field(default=None)
 
 
 class ProxyConfig(BaseSettings):

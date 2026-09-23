@@ -646,6 +646,11 @@ def run() -> int:
     """Launch the mobiot desktop GUI."""
     config = load_config()
     config.ensure_dirs()
+    # In a standalone build, point every engine at the bundled tools so nothing
+    # is downloaded or required externally.
+    from .. import bundled
+
+    bundled.activate(config)
     app = QApplication(sys.argv)
     app.setStyleSheet(theme.STYLESHEET)
     window = MainWindow(config)

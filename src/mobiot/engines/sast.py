@@ -38,6 +38,7 @@ class MobSFServer:
         self._key_file = config.workspace / "mobsf_api_key"
         self._secret_file = config.workspace / "mobsf_secret_key"
         self._home_dir = config.workspace / "mobsf_home"
+        self._server_thread = None
 
     # -- api key persistence ---------------------------------------------
 
@@ -132,6 +133,8 @@ class MobSFServer:
             return None
 
     def is_running(self) -> bool:
+        if self._server_thread is not None and self._server_thread.is_alive():
+            return True
         pid = self._read_pid()
         if pid is None:
             return False
@@ -154,12 +157,24 @@ class MobSFServer:
 
         return [sys.executable, "-m", "mobsf", listen]
 
+    def _use_in_process(self) -> bool:
+        if self.mobsf.in_process is not None:
+            return self.mobsf.in_process
+        # Auto: in a frozen standalone build there is no separate interpreter to
+        # spawn, so serve MobSF in-process.
+        import sys
+
+        return bool(getattr(sys, "frozen", False))
+
     def start(self, wait: bool = True) -> dict[str, Any]:
         """Start the MobSF server if not already running."""
         self.config.ensure_dirs()
         client = self.client()
         if client.ping():
             return {"started": False, "already_running": True, "url": self.mobsf.url}
+
+        if self._use_in_process():
+            return self._start_in_process(wait=wait)
 
         self._prepare_home()
         listen = f"{self.mobsf.host}:{self.mobsf.port}"
@@ -192,8 +207,90 @@ class MobSFServer:
             f"See log: {self._log_file}",
         )
 
+    def _start_in_process(self, wait: bool = True) -> dict[str, Any]:
+        """Serve MobSF inside this process via waitress (no subprocess).
+
+        This is what lets a standalone build run MobSF with no separate install
+        or interpreter: it configures Django, runs migrations once, and serves
+        the WSGI app on a daemon thread. The server lives for the process
+        lifetime; ``stop`` is a no-op in this mode.
+        """
+        import os
+        import threading
+
+        # Apply the offline profile to this process's environment.
+        for key, value in self._build_env().items():
+            os.environ[key] = value
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mobsf.MobSF.settings")
+        self._prepare_home()
+
+        error: dict[str, Any] = {}
+
+        def serve() -> None:
+            try:
+                import django
+
+                django.setup()
+                from django.core.management import call_command
+
+                for args in (
+                    ("makemigrations",),
+                    ("makemigrations", "StaticAnalyzer"),
+                    ("migrate",),
+                ):
+                    try:
+                        call_command(*args, interactive=False, verbosity=0)
+                    except Exception as exc:  # non-fatal migration edge cases
+                        self.log.debug("migration step %s: %s", args, exc)
+                try:
+                    call_command("create_roles", verbosity=0)
+                except Exception as exc:
+                    self.log.debug("create_roles: %s", exc)
+
+                from mobsf.MobSF.wsgi import application
+                from waitress import serve as waitress_serve
+
+                waitress_serve(
+                    application,
+                    host=self.mobsf.host,
+                    port=self.mobsf.port,
+                    threads=10,
+                    channel_timeout=3600,
+                    _quiet=True,
+                )
+            except Exception as exc:  # pragma: no cover - reported via error dict
+                error["error"] = str(exc)
+                self.log.exception("In-process MobSF server failed")
+
+        thread = threading.Thread(target=serve, name="mobsf-server", daemon=True)
+        thread.start()
+        self._server_thread = thread
+
+        if not wait:
+            return {"started": True, "in_process": True, "url": self.mobsf.url}
+
+        deadline = time.time() + self.mobsf.startup_timeout
+        client = self.client()
+        while time.time() < deadline:
+            if client.ping():
+                return {"started": True, "in_process": True, "url": self.mobsf.url}
+            if error:
+                raise EngineError("sast", f"In-process MobSF failed: {error['error']}")
+            if not thread.is_alive():
+                raise EngineError(
+                    "sast", f"In-process MobSF thread exited: {error.get('error', 'unknown')}"
+                )
+            time.sleep(1.5)
+        raise EngineError(
+            "sast",
+            f"In-process MobSF did not become ready within {self.mobsf.startup_timeout}s.",
+        )
+
     def stop(self) -> dict[str, Any]:
         """Stop the MobSF server process (and children)."""
+        if self._server_thread is not None and self._server_thread.is_alive():
+            # In-process (waitress) server lives for the app lifetime.
+            return {"stopped": False, "reason": "in-process server; exits with the app"}
         pid = self._read_pid()
         if pid is None or not self.is_running():
             self._pid_file.unlink(missing_ok=True)
