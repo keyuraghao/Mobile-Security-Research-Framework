@@ -43,7 +43,7 @@ def main() -> int:
     if not body:
         body = f"Release {version}. See CHANGELOG.md for details."
     header = (
-        f"## mobiot {version}\n\n"
+        f"## Mobile Security and Research Framework {version}\n\n"
         "Self-contained Mobile & IoT SAST / DAST / pentest toolkit "
         "(desktop app + CLI + MCP server).\n\n"
         "### Download\n\n"
