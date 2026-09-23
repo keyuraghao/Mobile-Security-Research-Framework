@@ -8,12 +8,14 @@ The server is launched with a deterministic API key and a workspace-scoped
 from __future__ import annotations
 
 import contextlib
+import json
 import os
 import secrets
 import time
 from pathlib import Path
 from typing import Any
 
+from .. import mobsf_direct
 from ..config import Config
 from ..exceptions import EngineError
 from ..mobsf_client import MobSFClient
@@ -332,22 +334,124 @@ class SASTEngine(Engine):
         self.server = MobSFServer(config)
 
     def preflight(self) -> dict[str, Any]:
-        client = self.server.client()
-        reachable = client.ping()
+        try:
+            import mobsf  # noqa: F401
+
+            mobsf_ok = True
+        except Exception:
+            mobsf_ok = False
         return {
             "engine": self.name,
-            "ready": reachable,
+            "ready": mobsf_ok,
             "details": {
-                "mobsf_url": self.config.mobsf.url,
-                "server_running": self.server.is_running(),
-                "reachable": reachable,
-                "mobsf_cli": which("mobsf") or "python -m mobsf",
+                "mode": "direct in-process analysis (no server, our own output)",
+                "mobsf_available": mobsf_ok,
+                "java": which("java"),
+                "jadx": which("jadx"),
+                "django_configured": mobsf_direct.is_configured(),
             },
         }
 
-    # -- server control ---------------------------------------------------
+    # -- local report cache ----------------------------------------------
 
-    @action("Start the MobSF server in the background.", background=True)
+    def _report_path(self, scan_hash: str) -> Path:
+        return self.config.reports_dir / f"{scan_hash}.json"
+
+    def _load_report(self, scan_hash: str) -> dict[str, Any]:
+        path = self._report_path(scan_hash)
+        if not path.is_file():
+            raise EngineError(
+                "sast", f"No cached report for {scan_hash!r}. Run 'sast scan' first."
+            )
+        return json.loads(path.read_text())
+
+    # -- scanning (direct, in-process) -----------------------------------
+
+    @action("Statically scan an app in-process; returns a scan summary.", mutating=True)
+    def scan(self, app_path: str, re_scan: bool = False) -> dict[str, Any]:
+        """Analyse ``app_path`` (APK/IPA) directly in-process via MobSF's engine.
+
+        No MobSF server is started and no REST is used: the raw result is
+        computed in-process, cached locally, and returned as our own summary.
+        The full report is available via ``report`` / ``scorecard``.
+        """
+        context = mobsf_direct.analyze(
+            app_path,
+            self.server._build_env(),
+            self.server._prepare_home,
+            rescan=re_scan,
+        )
+        scan_hash = context["hash"]
+        self.config.reports_dir.mkdir(parents=True, exist_ok=True)
+        self._report_path(scan_hash).write_text(json.dumps(context, default=str))
+        self.log.info("Scanned %s -> %s", context.get("file_name"), scan_hash)
+
+        appsec = context.get("appsec", {}) or {}
+        return {
+            "hash": scan_hash,
+            "file_name": context.get("file_name"),
+            "scan_type": context.get("scan_type"),
+            "security_score": appsec.get("security_score"),
+            "high": len(appsec.get("high", []) or []),
+            "warning": len(appsec.get("warning", []) or []),
+            "info": len(appsec.get("info", []) or []),
+        }
+
+    @action("Fetch the full JSON static-analysis report for a scan hash.")
+    def report(self, scan_hash: str) -> dict[str, Any]:
+        return self._load_report(scan_hash)
+
+    @action("Fetch the app security scorecard (score + findings) for a scan hash.")
+    def scorecard(self, scan_hash: str) -> dict[str, Any]:
+        return self._load_report(scan_hash).get("appsec", {})
+
+    @action("Export a scan's full report to a JSON file in the workspace.")
+    def export(self, scan_hash: str, out_path: str | None = None) -> dict[str, Any]:
+        report = self._load_report(scan_hash)
+        target = (
+            Path(out_path).expanduser()
+            if out_path
+            else self.config.reports_dir / f"{scan_hash}.export.json"
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(report, indent=2, default=str))
+        return {"report": str(target)}
+
+    @action("List locally cached scans.")
+    def recent(self) -> dict[str, Any]:
+        scans = []
+        for p in sorted(self.config.reports_dir.glob("*.json")):
+            if p.name.endswith(".export.json"):
+                continue
+            try:
+                data = json.loads(p.read_text())
+            except Exception as exc:
+                self.log.debug("skipping unreadable report %s: %s", p, exc)
+                continue
+            scans.append(
+                {
+                    "hash": data.get("hash", p.stem),
+                    "file_name": data.get("file_name"),
+                    "scan_type": data.get("scan_type"),
+                    "security_score": (data.get("appsec") or {}).get("security_score"),
+                }
+            )
+        return {"scans": scans}
+
+    @action("Delete a cached scan report.", mutating=True)
+    def delete(self, scan_hash: str) -> dict[str, Any]:
+        removed = False
+        export = self.config.reports_dir / f"{scan_hash}.export.json"
+        for p in (self._report_path(scan_hash), export):
+            if p.is_file():
+                p.unlink()
+                removed = True
+        return {"deleted": removed, "hash": scan_hash}
+
+    # -- optional server mode (web UI / external REST clients) ------------
+
+    @action("Start the MobSF web/REST server (optional; not needed for scans).",
+            background=True)
     def start_server(self, wait: bool = True) -> dict[str, Any]:
         return self.server.start(wait=wait)
 
@@ -355,69 +459,10 @@ class SASTEngine(Engine):
     def stop_server(self) -> dict[str, Any]:
         return self.server.stop()
 
-    @action("Report MobSF server status and the REST API key location.")
+    @action("Report optional MobSF server status.")
     def server_status(self) -> dict[str, Any]:
         return {
             "running": self.server.is_running(),
             "reachable": self.server.client().ping(),
             "url": self.config.mobsf.url,
-            "api_key_configured": bool(self.config.mobsf.api_key)
-            or (self.config.workspace / "mobsf_api_key").is_file(),
         }
-
-    # -- scanning ---------------------------------------------------------
-
-    @action("Upload and statically scan an app; returns the scan hash.", mutating=True)
-    def scan(self, app_path: str, re_scan: bool = False) -> dict[str, Any]:
-        """Upload ``app_path`` to MobSF and run a static scan.
-
-        Args:
-            app_path: Path to an APK/IPA/APPX/ZIP on the local filesystem.
-            re_scan: Force a fresh scan even if a cached result exists.
-        """
-        path = Path(app_path).expanduser()
-        with self.server.client() as client:
-            if not client.ping():
-                raise EngineError(
-                    "sast", "MobSF server is not running. Run 'sast start-server' first."
-                )
-            uploaded = client.upload(path)
-            scan_hash = uploaded["hash"]
-            self.log.info("Uploaded %s -> hash %s", path.name, scan_hash)
-            client.scan(scan_hash, re_scan=re_scan)
-            return {
-                "hash": scan_hash,
-                "file_name": uploaded.get("file_name"),
-                "scan_type": uploaded.get("scan_type"),
-            }
-
-    @action("Fetch the full JSON static-analysis report for a scan hash.")
-    def report(self, scan_hash: str) -> dict[str, Any]:
-        with self.server.client() as client:
-            return client.report_json(scan_hash)
-
-    @action("Fetch the app security scorecard for a scan hash.")
-    def scorecard(self, scan_hash: str) -> dict[str, Any]:
-        with self.server.client() as client:
-            return client.scorecard(scan_hash)
-
-    @action("Download the PDF report for a scan hash into the workspace.")
-    def pdf(self, scan_hash: str, out_path: str | None = None) -> dict[str, Any]:
-        target = (
-            Path(out_path).expanduser()
-            if out_path
-            else self.config.reports_dir / f"{scan_hash}.pdf"
-        )
-        with self.server.client() as client:
-            saved = client.download_pdf(scan_hash, target)
-        return {"pdf": str(saved)}
-
-    @action("List recent scans stored on the MobSF server.")
-    def recent(self, page: int = 1, page_size: int = 25) -> dict[str, Any]:
-        with self.server.client() as client:
-            return client.recent_scans(page=page, page_size=page_size)
-
-    @action("Delete a scan and its artefacts from the MobSF server.", mutating=True)
-    def delete(self, scan_hash: str) -> dict[str, Any]:
-        with self.server.client() as client:
-            return client.delete_scan(scan_hash)

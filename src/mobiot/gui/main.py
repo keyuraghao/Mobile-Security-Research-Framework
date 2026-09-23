@@ -218,13 +218,11 @@ class MainWindow(QMainWindow):
         w = QWidget()
         lay = QVBoxLayout(w)
 
-        srv = QHBoxLayout()
-        self.sast_status = _label("MobSF: unknown", "muted")
-        start_btn = _button("Start MobSF server")
-        srv.addWidget(start_btn)
-        srv.addWidget(self.sast_status)
-        srv.addStretch(1)
-        lay.addLayout(srv)
+        self.sast_status = _label(
+            "Analysis runs in-process. No server, install, or login required.",
+            "muted",
+        )
+        lay.addWidget(self.sast_status)
 
         pick = QHBoxLayout()
         self.sast_path = QLineEdit()
@@ -247,38 +245,16 @@ class MainWindow(QMainWindow):
         lay.addWidget(self.sast_tree, 1)
 
         acts = QHBoxLayout()
-        self.sast_pdf_btn = _button("Save PDF report")
+        self.sast_pdf_btn = _button("Export report (JSON)")
         acts.addStretch(1)
         acts.addWidget(self.sast_pdf_btn)
         lay.addLayout(acts)
 
         self._sast_hash: str | None = None
-        start_btn.clicked.connect(self._sast_start_server)
         browse.clicked.connect(self._sast_browse)
         scan.clicked.connect(self._sast_scan)
-        self.sast_pdf_btn.clicked.connect(self._sast_pdf)
-        self._refresh_sast_status()
+        self.sast_pdf_btn.clicked.connect(self._sast_export)
         return w
-
-    def _refresh_sast_status(self) -> None:
-        def work():
-            return self.engine("sast").server_status()
-
-        self.submit(
-            work,
-            on_result=lambda d: self.sast_status.setText(
-                f"MobSF: {'running' if d.get('running') else 'stopped'} · {d.get('url')}"
-            ),
-            on_error=lambda e: self.sast_status.setText("MobSF: error"),
-        )
-
-    def _sast_start_server(self) -> None:
-        self.sast_status.setText("MobSF: starting…")
-        self.submit(
-            lambda: self.engine("sast").start_server(),
-            on_result=lambda d: self._refresh_sast_status(),
-            on_error=lambda e: self.sast_status.setText(f"MobSF: {e[:60]}"),
-        )
 
     def _sast_browse(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -332,13 +308,13 @@ class MainWindow(QMainWindow):
             self.sast_tree.addTopLevelItem(parent)
             parent.setExpanded(True)
 
-    def _sast_pdf(self) -> None:
+    def _sast_export(self) -> None:
         if not self._sast_hash:
             return
         self.submit(
-            lambda: self.engine("sast").pdf(self._sast_hash),
-            on_result=lambda d: self.sast_score.setText(f"PDF saved: {d.get('pdf')}"),
-            on_error=lambda e: self.sast_score.setText(f"PDF failed: {e[:90]}"),
+            lambda: self.engine("sast").export(self._sast_hash),
+            on_result=lambda d: self.sast_score.setText(f"Report exported: {d.get('report')}"),
+            on_error=lambda e: self.sast_score.setText(f"Export failed: {e[:90]}"),
         )
 
     # -- Frida hooks (flagship) ------------------------------------------
