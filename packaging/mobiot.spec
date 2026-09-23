@@ -28,16 +28,19 @@ hiddenimports += [
 ]
 
 # Optionally bundle a vendor/ tree of native tools (jre, jadx, adb, frida-server)
-# populated by the release build; harmless when absent.
+# populated by the release build; harmless when absent. Placed under the project
+# root (parent of this spec's directory).
 import os
-if os.path.isdir("vendor"):
-    for root, _dirs, files in os.walk("vendor"):
+_root = os.path.dirname(SPECPATH)
+_vendor = os.path.join(_root, "vendor")
+if os.path.isdir(_vendor):
+    for dirpath, _dirs, files in os.walk(_vendor):
+        rel = os.path.relpath(dirpath, _root)  # e.g. vendor/jre/bin
         for f in files:
-            full = os.path.join(root, f)
-            datas.append((full, os.path.join(*full.split(os.sep)[:-1]) or "vendor"))
+            datas.append((os.path.join(dirpath, f), rel))
 
 a = Analysis(
-    ["packaging/mobiot_app.py"],
+    [os.path.join(SPECPATH, "mobiot_app.py")],
     pathex=[],
     binaries=binaries,
     datas=datas,
