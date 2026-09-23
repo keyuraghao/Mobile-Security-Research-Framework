@@ -6,6 +6,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-22
+
+Fully self-contained desktop app: download one file per OS, run it, nothing else required.
+
+### Added
+- **Standalone per-OS bundles.** The release ships a self-contained app for Linux, Windows and macOS that bundles MobSF, a JRE, jadx, adb, frida-server, Frida, mitmproxy and objection. No install, no downloads, no login. The one executable is also the CLI and MCP server (run with arguments).
+- **Direct in-process MobSF analysis.** Static analysis calls MobSF's analyzer facade directly (`mobsf_direct.py`), returning the raw result which is rendered through mobiot's own UI and output. No MobSF server, REST, templates or login.
+- **20+ inbuilt Frida hooks** across bypass/monitor/recon/trace categories, run with one click or one command.
+- **Built-in device/Frida simulator** (`sim` engine) to generate and test payloads with nothing attached.
+- **MCP full self-introspection**: `mobiot_capabilities` and `mobiot_workspace`, plus bundled-tool activation so the MCP server has the same self-contained capability as the GUI/CLI.
+- **PyQt6 desktop GUI** (`mobiot ui`).
+- **On-demand and bundled tool provisioning** (`provisioning.py`, `bundled.py`, `packaging/fetch_vendor.py`).
+
+### Changed
+- MobSF runs with authentication disabled and web UI off; the app never presents a login.
+
 ## [0.1.0] - 2026-09-22
 
 Initial public release.
@@ -50,5 +66,6 @@ Initial public release.
 - **Cross-platform** throughout: tool discovery via `PATH`, no hardcoded paths,
   `platformdirs` workspace, shell-free subprocess execution.
 
-[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.2.0
 [0.1.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.1.0
