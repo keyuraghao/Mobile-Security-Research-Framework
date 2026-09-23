@@ -95,6 +95,7 @@ ignore = [
 "src/mobiot/gui/*" = ["E501", "SIM118"]  # long QSS/HTML/lambda lines; Qt .keys() is not a dict
 "src/mobiot/report_format.py" = ["E501"]  # descriptive display strings
 "src/mobiot/reporting.py" = ["E501"]  # long HTML/report template strings
+"src/mobiot/engines/emulator.py" = ["E501"]  # long download/tool URLs
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

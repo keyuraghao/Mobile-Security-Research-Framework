@@ -5,8 +5,9 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 datas, binaries, hiddenimports = [], [], []
 
-# Packages whose code + data files must all ship.
-for pkg in ("mobiot", "mobsf", "apkid", "apksigtool", "libsast"):
+# Packages whose code + data files must all ship (openpyxl/fpdf carry data used
+# by the reporting engine; they are imported lazily so must be forced in).
+for pkg in ("mobiot", "mobsf", "apkid", "apksigtool", "libsast", "openpyxl", "fpdf"):
     d, b, h = collect_all(pkg)
     datas += d
     binaries += b

@@ -104,6 +104,24 @@ class FridaConfig(BaseSettings):
     device_id: str | None = Field(default=None)
 
 
+class EmulatorConfig(BaseSettings):
+    """Managed Android emulator (AVD) settings."""
+
+    model_config = SettingsConfigDict(env_prefix="MOBIOT_EMULATOR_", extra="ignore")
+
+    #: Android SDK root. Auto-detected from ANDROID_SDK_ROOT/ANDROID_HOME or the
+    #: workspace 'android-sdk' when unset.
+    sdk_root: Path | None = Field(default=None)
+    avd_name: str = Field(default="mobiot")
+    api_level: int = Field(default=33)
+    #: System-image variant with root-friendly Google APIs (not play images).
+    image_type: str = Field(default="google_apis")
+    #: Emulator/system-image ABI (x86_64 is fastest under KVM/HAXM).
+    abi: str = Field(default="x86_64")
+    headless: bool = Field(default=False)
+    boot_timeout: float = Field(default=300.0)
+
+
 class Config(BaseSettings):
     """Top-level mobiot configuration."""
 
@@ -116,6 +134,7 @@ class Config(BaseSettings):
     mobsf: MobSFConfig = Field(default_factory=MobSFConfig)
     proxy: ProxyConfig = Field(default_factory=ProxyConfig)
     frida: FridaConfig = Field(default_factory=FridaConfig)
+    emulator: EmulatorConfig = Field(default_factory=EmulatorConfig)
 
     # -- derived workspace sub-directories -------------------------------
 

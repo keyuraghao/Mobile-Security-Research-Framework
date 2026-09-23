@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a86d0"/>
+      <stop offset="1" stop-color="#0a4a80"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="46" fill="url(#bg)"/>
+  <rect x="8" y="8" width="240" height="240" rx="46" fill="none" stroke="#083a63" stroke-width="4"/>
+  <!-- shield -->
+  <path d="M128 44 L196 70 V128 C196 172 166 200 128 214 C90 200 60 172 60 128 V70 Z"
+        fill="#ffffff" fill-opacity="0.96"/>
+  <!-- circuit node + lock keyhole -->
+  <circle cx="128" cy="120" r="20" fill="#0a4a80"/>
+  <rect x="122" y="120" width="12" height="34" rx="6" fill="#0a4a80"/>
+  <!-- circuit traces -->
+  <g stroke="#1a86d0" stroke-width="7" stroke-linecap="round" fill="none">
+    <path d="M128 120 H92 M92 120 V150"/>
+    <path d="M128 120 H164 M164 120 V150"/>
+    <path d="M128 100 V80"/>
+  </g>
+  <circle cx="92" cy="150" r="7" fill="#1a86d0"/>
+  <circle cx="164" cy="150" r="7" fill="#1a86d0"/>
+  <circle cx="128" cy="80" r="7" fill="#1a86d0"/>
+</svg>

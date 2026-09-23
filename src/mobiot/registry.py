@@ -73,6 +73,7 @@ def _load_builtins() -> None:
     from .engines import (  # noqa: F401
         appdata,
         dast,
+        emulator,
         findings,
         hooks,
         iot,

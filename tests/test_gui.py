@@ -54,6 +54,7 @@ def test_mainwindow_builds_all_tabs(qapp, tmp_path):
         "Static (SAST)",
         "Frida Hooks",
         "Dynamic (DAST)",
+        "Emulator",
         "App Data",
         "Proxy",
         "Network",

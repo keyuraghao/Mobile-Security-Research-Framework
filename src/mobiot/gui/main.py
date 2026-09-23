@@ -42,8 +42,10 @@ from ..registry import all_engines, get_engine
 from . import theme
 from .appdata_view import AppDataView
 from .dast_view import DastView
+from .emulator_view import EmulatorView
 from .findings_view import FindingsView
 from .help_view import HelpView
+from .icon import app_icon
 from .sast_view import SASTView
 from .worker import Worker
 
@@ -82,6 +84,7 @@ class MainWindow(QMainWindow):
         self._busy = 0
 
         self.setWindowTitle(f"mobiot  —  Mobile & IoT Security Toolkit  {get_version()}")
+        self.setWindowIcon(app_icon())
         self.resize(1180, 760)
 
         self._build_menu()
@@ -98,6 +101,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.sast_view, "Static (SAST)")
         self.tabs.addTab(self._tab_hooks(), "Frida Hooks")
         self.tabs.addTab(DastView(self), "Dynamic (DAST)")
+        self.tabs.addTab(EmulatorView(self), "Emulator")
         self.tabs.addTab(AppDataView(self), "App Data")
         self.tabs.addTab(self._tab_proxy(), "Proxy")
         self.tabs.addTab(self._tab_network(), "Network")
@@ -213,14 +217,22 @@ class MainWindow(QMainWindow):
         self.status("Ready")
 
     def _about(self) -> None:
-        QMessageBox.about(
-            self,
-            "About mobiot",
-            f"<h3>mobiot {get_version()}</h3>"
-            "<p>Self-contained Mobile &amp; IoT SAST / DAST / pentest toolkit.</p>"
-            "<p>Bundles MobSF, Frida, mitmproxy, objection, and more. "
-            "For authorised security testing only.</p>",
+        box = QMessageBox(self)
+        box.setWindowTitle("About mobiot")
+        box.setIconPixmap(app_icon().pixmap(64, 64))
+        box.setTextFormat(Qt.TextFormat.RichText)
+        box.setText(
+            f"<h2>mobiot {get_version()}</h2>"
+            "<p>Unified, self-contained <b>Mobile &amp; IoT SAST / DAST / "
+            "penetration-testing</b> toolkit.</p>"
+            "<p>Bundles MobSF, Frida, objection, mitmproxy, nmap and binwalk behind "
+            "one desktop app, a CLI and an MCP server.</p>"
+            "<p>License: GPL-3.0-only<br>"
+            'Project: <a href="https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest">'
+            "github.com/keyuraghao/Mobile_SAST_DAST_Pentest</a></p>"
+            "<p style='color:#a33'>For authorised security testing only.</p>"
         )
+        box.exec()
 
     def _menu_open_app(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -555,6 +567,11 @@ def run() -> int:
     bundled.activate(config)
     app = QApplication(sys.argv)
     app.setApplicationName("mobiot")
+    app.setApplicationDisplayName("mobiot")
+    app.setApplicationVersion(get_version())
+    app.setOrganizationName("mobiot")
+    app.setDesktopFileName("mobiot")
+    app.setWindowIcon(app_icon())
     theme.apply(app)
     window = MainWindow(config)
     window.show()
