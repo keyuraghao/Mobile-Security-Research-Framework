@@ -52,7 +52,9 @@ class EmulatorView(QWidget):
         grid = QGridLayout(cfg)
         grid.addWidget(QLabel("API level:"), 0, 0)
         self.api = QComboBox()
-        self.api.addItems(["30", "31", "32", "33", "34"])
+        # Full range: API 7 (Android 2.1) .. 35 (Android 15). Not every level has
+        # an x86_64 system image; setup reports if the chosen image is unavailable.
+        self.api.addItems([str(i) for i in range(7, 36)])
         self.api.setCurrentText("33")
         grid.addWidget(self.api, 0, 1)
         grid.addWidget(QLabel("Image:"), 0, 2)

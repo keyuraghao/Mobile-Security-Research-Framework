@@ -136,18 +136,14 @@ class EmulatorEngine(Engine):
 
     # -- setup / lifecycle ----------------------------------------------
 
-    @action("Install the SDK packages (emulator + system image) and create the AVD.",
+    @action("Install the SDK (cmdline-tools, emulator, system image) and create the AVD.",
             background=True, mutating=True)
     def setup(self) -> dict[str, Any]:
-        sdkmanager = self._sdkmanager()
+        # Auto-provision the Android command-line tools if missing.
+        sdkmanager = self._ensure_cmdline_tools()
         avdmanager = self._avdmanager()
-        if not sdkmanager or not avdmanager:
-            raise EngineError(
-                "emulator",
-                "Android SDK command-line tools not found. Install Android "
-                "'cmdline-tools' and set ANDROID_SDK_ROOT (or emulator.sdk_root). "
-                f"Looked under {self._sdk_root()}.",
-            )
+        if not avdmanager:
+            raise EngineError("emulator", "avdmanager not found after installing cmdline-tools.")
         image = self._image_pkg()
         env = {"ANDROID_SDK_ROOT": str(self._sdk_root())}
         # Accept licenses then install packages.
@@ -310,7 +306,9 @@ class EmulatorEngine(Engine):
         return adb
 
     def _download(self, url: str, dest: Path) -> Path:
-        import urllib.request
+        # Use httpx (bundled, verifies via certifi) so downloads work inside the
+        # frozen app where urllib has no CA bundle.
+        import httpx
 
         if not url.lower().startswith("https://"):
             raise EngineError("emulator", f"Refusing non-https download URL: {url}")
@@ -319,9 +317,65 @@ class EmulatorEngine(Engine):
             return dest
         self.log.info("Downloading %s", url)
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "mobiot"})  # noqa: S310
-            with urllib.request.urlopen(req, timeout=600) as resp:  # noqa: S310
-                dest.write_bytes(resp.read())
+            with httpx.stream(
+                "GET", url, follow_redirects=True, timeout=600,
+                headers={"User-Agent": "mobiot"},
+            ) as resp:
+                resp.raise_for_status()
+                with dest.open("wb") as fh:
+                    for chunk in resp.iter_bytes(65536):
+                        fh.write(chunk)
         except Exception as exc:
+            dest.unlink(missing_ok=True)
             raise EngineError("emulator", f"Download failed for {url}: {exc}") from exc
         return dest
+
+    # -- SDK bootstrap ---------------------------------------------------
+
+    _CLT_VERSION = "11076708"
+
+    def _ensure_cmdline_tools(self) -> str:
+        """Return sdkmanager, auto-installing the Android command-line tools.
+
+        Downloads Google's command-line tools into the SDK root and lays them out
+        at ``cmdline-tools/latest`` (the layout sdkmanager expects), using the
+        bundled JRE for Java.
+        """
+        existing = self._sdkmanager()
+        if existing:
+            return existing
+        import shutil
+        import zipfile
+
+        from ..platform_utils import os_name
+
+        plat = {"windows": "win", "macos": "mac", "linux": "linux"}.get(os_name(), "linux")
+        url = (
+            "https://dl.google.com/android/repository/"
+            f"commandlinetools-{plat}-{self._CLT_VERSION}_latest.zip"
+        )
+        root = self._sdk_root()
+        root.mkdir(parents=True, exist_ok=True)
+        zpath = root / "cmdline-tools.zip"
+        self._download(url, zpath)
+        tmp = root / "_clt_tmp"
+        shutil.rmtree(tmp, ignore_errors=True)
+        with zipfile.ZipFile(zpath) as zf:
+            zf.extractall(tmp)
+        latest = root / "cmdline-tools" / "latest"
+        latest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.rmtree(latest, ignore_errors=True)
+        shutil.move(str(tmp / "cmdline-tools"), str(latest))
+        shutil.rmtree(tmp, ignore_errors=True)
+        zpath.unlink(missing_ok=True)
+        # Make bin scripts executable on POSIX.
+        if not IS_WINDOWS:
+            import contextlib
+
+            for f in (latest / "bin").glob("*"):
+                with contextlib.suppress(OSError):
+                    f.chmod(0o755)
+        found = self._sdkmanager()
+        if not found:
+            raise EngineError("emulator", "Installed command-line tools but sdkmanager still not found.")
+        return found

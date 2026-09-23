@@ -6,8 +6,9 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 datas, binaries, hiddenimports = [], [], []
 
 # Packages whose code + data files must all ship (openpyxl/fpdf carry data used
-# by the reporting engine; they are imported lazily so must be forced in).
-for pkg in ("mobiot", "mobsf", "apkid", "apksigtool", "libsast", "openpyxl", "fpdf"):
+# by the reporting engine; certifi's CA bundle is needed for HTTPS downloads in
+# the frozen app; all are imported lazily so must be forced in).
+for pkg in ("mobiot", "mobsf", "apkid", "apksigtool", "libsast", "openpyxl", "fpdf", "certifi"):
     d, b, h = collect_all(pkg)
     datas += d
     binaries += b
