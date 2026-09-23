@@ -17,7 +17,7 @@ from typing import Any
 from .. import device as dev
 from ..config import Config
 from ..exceptions import EngineError, ToolNotFoundError
-from ..platform_utils import frida_server_arch, require_tool, run, which
+from ..platform_utils import NO_WINDOW, frida_server_arch, require_tool, run, which
 from ..provisioning import ensure_frida_server
 from ..registry import register
 from .base import Engine, action
@@ -221,7 +221,7 @@ class DASTEngine(Engine):
         target.parent.mkdir(parents=True, exist_ok=True)
         proc = subprocess.run(  # noqa: S603
             [adb, "-s", serial, "exec-out", "screencap", "-p"],
-            capture_output=True, timeout=30, check=False,
+            capture_output=True, timeout=30, check=False, **NO_WINDOW,
         )
         if proc.returncode != 0 or not proc.stdout:
             err = proc.stderr.decode(errors="replace")[:200]

@@ -134,10 +134,10 @@ class MainWindow(QMainWindow):
         self._view_menu.addAction(toggle)
         self._toolbar.addAction(toggle)
 
-        # Periodic connection-info refresh.
+        # Background connection-info poll (quiet: no busy indicator, no flicker).
         self._conn_timer = QTimer(self)
         self._conn_timer.timeout.connect(self._refresh_connection)
-        self._conn_timer.start(6000)
+        self._conn_timer.start(30000)
         self._refresh_connection()
 
     # -- infra -----------------------------------------------------------
@@ -153,15 +153,21 @@ class MainWindow(QMainWindow):
         *args: Any,
         on_result: Callable[[Any], None] | None = None,
         on_error: Callable[[str], None] | None = None,
+        quiet: bool = False,
         **kwargs: Any,
     ) -> None:
-        self._set_busy(True)
+        # ``quiet`` tasks (e.g. the periodic connection poll) do not toggle the
+        # global busy indicator, so they run in the background without flashing
+        # the progress bar or otherwise looking like the app is "refreshing".
+        if not quiet:
+            self._set_busy(True)
         worker = Worker(fn, *args, **kwargs)
         if on_result:
             worker.signals.result.connect(on_result)
         if on_error:
             worker.signals.error.connect(on_error)
-        worker.signals.finished.connect(lambda: self._set_busy(False))
+        if not quiet:
+            worker.signals.finished.connect(lambda: self._set_busy(False))
         self.pool.start(worker)
 
     def _set_busy(self, busy: bool) -> None:
@@ -308,7 +314,7 @@ class MainWindow(QMainWindow):
                 info["devices"] = 0
             return info
 
-        self.submit(work, on_result=self._apply_connection)
+        self.submit(work, on_result=self._apply_connection, quiet=True)
 
     def _apply_connection(self, info: dict) -> None:
         self.conn_sast.setText("SAST: ready" if info.get("sast") else "SAST: unavailable")

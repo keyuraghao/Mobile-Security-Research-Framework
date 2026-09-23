@@ -23,6 +23,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+# Enumerate techniques the built-in simulator can answer (dast method -> sim method).
+_SIM_EQUIVALENT = {"devices": "status", "applications": "applications", "processes": "processes"}
+
 
 class DastView(QWidget):
     def __init__(self, host) -> None:
@@ -42,7 +45,7 @@ class DastView(QWidget):
         r1.addWidget(QLabel("Target:"))
         self.device = QComboBox()
         self.device.addItem("Simulator (no device needed)", "sim")
-        self.device.addItem("USB device (real)", "usb")
+        self.device.addItem("Device or emulator (adb)", "usb")
         r1.addWidget(self.device)
         r1.addWidget(QLabel("Package:"))
         self.package = QLineEdit("jakhar.aseem.diva")
@@ -154,7 +157,19 @@ class DastView(QWidget):
         engine = spec["engine"]
         method = spec["method"]
         kwargs: dict[str, Any] = {}
-        if engine == "hooks":
+        if device_choice == "sim" and engine != "hooks":
+            # The simulator answers the enumerate techniques itself; everything
+            # else here (adb, objection, frida-server) needs real hardware.
+            sim_method = _SIM_EQUIVALENT.get(method)
+            if not sim_method:
+                self.output.appendPlainText(
+                    "This technique needs a real device or the emulator. Set Target to "
+                    "'Device or emulator (adb)' and make sure one is connected "
+                    "(Emulator tab > Launch emulator)."
+                )
+                return
+            engine, method = "sim", sim_method
+        elif engine == "hooks":
             kwargs["device_id"] = "sim" if device_choice == "sim" else None
             kwargs["package"] = pkg
             if spec.get("mobsf_script"):
@@ -164,7 +179,7 @@ class DastView(QWidget):
                 if spec.get("params"):
                     defaults = {"CLASS": pkg + ".MainActivity", "METHOD": "onCreate", "FILTER": pkg}
                     kwargs["params"] = {k: defaults.get(k, "") for k in spec["params"]}
-        else:
+        elif engine != "sim":
             if spec.get("pkg"):
                 kwargs["package"] = pkg
             if spec.get("cmd"):

@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import io
 import lzma
-import os
 import platform
 import shutil
 import sys

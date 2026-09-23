@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from . import theme
 from .sast_view import _sev_brush, _Table
 
 _SEVERITIES = ["high", "warning", "info", "secure", "hotspot", "note"]
@@ -65,6 +66,7 @@ class FindingsView(QWidget):
     def __init__(self, host) -> None:
         super().__init__()
         self.host = host
+        self._sorted_once = False
         self._build()
 
     def _build(self) -> None:
@@ -117,13 +119,17 @@ class FindingsView(QWidget):
             cells = [f.get("severity", ""), f.get("source", ""), f.get("title", ""),
                      f.get("target", ""), f.get("created", "")]
             for c, val in enumerate(cells):
-                item = QTableWidgetItem(str(val))
+                item = theme.SeverityItem(str(val)) if c == 0 else QTableWidgetItem(str(val))
                 if c == 0:
                     item.setData(Qt.ItemDataRole.UserRole, f.get("id"))
                     brush = _sev_brush(val)
                     if brush:
                         item.setForeground(brush)
                 self.table.setItem(r, c, item)
+        if not self._sorted_once:
+            # Default view: most severe first. Later header clicks are kept.
+            self.table.horizontalHeader().setSortIndicator(0, Qt.SortOrder.AscendingOrder)
+            self._sorted_once = True
         self.table.setSortingEnabled(True)
         self.table.resizeColumnsToContents()
 

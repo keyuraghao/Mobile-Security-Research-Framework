@@ -430,21 +430,23 @@ class SASTEngine(Engine):
         if not target.is_file():
             raise EngineError("sast", f"File not found in app: {rel_path}")
         raw = target.read_bytes()
-        truncated = len(raw) > max_bytes
-        raw = raw[:max_bytes]
+        size = len(raw)
+        # Compiled Android XML (AndroidManifest.xml, res/**/*.xml) is binary
+        # "AXML"; decode it back to readable XML with MobSF's bundled decoder.
+        if raw[:4] == _AXML_MAGIC:
+            xml = _decode_axml(raw)
+            if xml is not None:
+                return {"path": rel_path, "binary": False, "decoded": "android-binary-xml",
+                        "size": size, "truncated": False, "content": xml}
         try:
-            content = raw.decode("utf-8")
-            binary = False
+            content = raw[:max_bytes].decode("utf-8")
+            return {"path": rel_path, "binary": False, "size": size,
+                    "truncated": size > max_bytes, "content": content}
         except UnicodeDecodeError:
-            content = raw.hex()
-            binary = True
-        return {
-            "path": rel_path,
-            "binary": binary,
-            "size": target.stat().st_size,
-            "truncated": truncated,
-            "content": content,
-        }
+            pass
+        limit = min(max_bytes, _HEX_VIEW_BYTES)
+        return {"path": rel_path, "binary": True, "size": size,
+                "truncated": size > limit, "content": _hexdump(raw[:limit])}
 
     @action("Export a scan's full report to a JSON file in the workspace.")
     def export(self, scan_hash: str, out_path: str | None = None) -> dict[str, Any]:
@@ -507,3 +509,32 @@ class SASTEngine(Engine):
             "reachable": self.server.client().ping(),
             "url": self.config.mobsf.url,
         }
+
+
+_AXML_MAGIC = b"\x03\x00\x08\x00"
+#: Binary files are shown as a hex dump; cap it so huge files stay responsive.
+_HEX_VIEW_BYTES = 64 * 1024
+
+
+def _decode_axml(raw: bytes) -> str | None:
+    """Decode Android binary XML to text, or None if it cannot be decoded."""
+    try:
+        from mobsf.StaticAnalyzer.tools.androguard4.axml import AXMLPrinter
+
+        printer = AXMLPrinter(raw)
+        if not printer.is_valid():
+            return None
+        return printer.get_xml().decode("utf-8", errors="replace")
+    except Exception:
+        return None
+
+
+def _hexdump(data: bytes) -> str:
+    """Classic offset / hex / text dump, 16 bytes per line."""
+    lines = []
+    for off in range(0, len(data), 16):
+        chunk = data[off:off + 16]
+        hexpart = " ".join(f"{b:02x}" for b in chunk)
+        text = "".join(chr(b) if 32 <= b < 127 else "." for b in chunk)
+        lines.append(f"{off:08x}  {hexpart:<47}  {text}")
+    return "\n".join(lines)

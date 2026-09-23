@@ -6,6 +6,42 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-09-22
+
+### Changed
+- **Emulator works the normal Android SDK way.** Launch opens the standard
+  emulator in its own window (like Android Studio). Root-only flags are no longer
+  used for a normal launch; Magisk, LSPosed and Xposed modules moved to an optional
+  Advanced section.
+- The Emulator tab now has an **Activity** box (what is running and for how long,
+  with a warning if a step goes quiet), a **progress bar**, and a **Live log** that
+  streams every line each step writes. The log is also saved to
+  `logs/emulator.log` (Open log file / Copy path buttons, and `emulator log_tail`
+  on the CLI/MCP) so a hang can be diagnosed.
+- Findings tables sort by severity rank (high, warning, info) instead of
+  alphabetically, most severe first by default.
+
+### Fixed
+- The app no longer "refreshes itself": the background connection check is quiet
+  (no progress-bar flash) and runs every 30 s instead of 6 s, and on Windows no
+  console window flashes when the app runs adb or other tools.
+- Rooted all-in-one no longer starts a second emulator; it stops and waits before
+  restarting after rooting.
+- Emulator downloads show progress and use a `.part` file, so an interrupted
+  download can no longer leave a broken file that gets reused.
+- Long emulator steps are killed by their timeout even if they print nothing.
+- Dynamic tab: with Target = Simulator, the Enumerate techniques now answer from
+  the simulator instead of failing with "device not found"; hardware-only
+  techniques explain that a device or the emulator is needed.
+- File browser shows `AndroidManifest.xml` and other compiled XML as readable XML
+  (decoded from Android binary XML); other binary files show a proper hex dump.
+- Disabled primary buttons now look disabled.
+
+### Docs
+- All README screenshots regenerated from the current build by the new
+  `packaging/capture_screenshots.py` (real DIVA scan, neutral paths). README
+  download section, tab list and emulator description brought up to date.
+
 ## [0.3.4] - 2026-09-22
 
 ### Changed

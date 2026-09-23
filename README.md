@@ -15,29 +15,44 @@ Mobile Security and Research Framework glues best-in-class security engines toge
 
 ## Screenshots
 
-The cross-platform desktop app (`msrf ui`), a classic Windows-style application:
+The desktop app (`msrf ui`). Every picture is generated from the current build by `packaging/capture_screenshots.py`, which scans the DIVA sample app for real.
 
-| Static analysis findings (tabular) | APK internal file browser |
+| Static analysis findings, most severe first | Internal file browser (binary manifest decoded) |
 |---|---|
 | ![SAST findings](docs/screenshots/02_sast_findings.png) | ![Files](docs/screenshots/05_sast_files.png) |
 
-| Dynamic (DAST) techniques | Help & MCP setup |
+| Permissions | Code analysis (CWE / OWASP / MSTG) |
 |---|---|
-| ![DAST](docs/screenshots/07_dast.png) | ![Help](docs/screenshots/08_help.png) |
+| ![Permissions](docs/screenshots/03_sast_permissions.png) | ![Code analysis](docs/screenshots/04_sast_code.png) |
 
-| Managed rooted emulator | Findings & reporting |
+| Inbuilt Frida hooks (run on the built-in simulator) | Dynamic (DAST) techniques |
+|---|---|
+| ![Frida hooks](docs/screenshots/06_frida_hooks.png) | ![DAST](docs/screenshots/07_dast.png) |
+
+| Android emulator with activity and live log | Findings and reporting |
 |---|---|
 | ![Emulator](docs/screenshots/09_emulator.png) | ![Findings](docs/screenshots/10_findings.png) |
 
+| Light theme | Dark theme |
+|---|---|
+| ![Light](docs/screenshots/11_theme_light.png) | ![Dark](docs/screenshots/12_theme_dark.png) |
+
+| Help and MCP setup |
+|---|
+| ![Help](docs/screenshots/08_help.png) |
+
 ## Download
 
-Prebuilt standalone desktop-app binaries for Linux, Windows and macOS are attached to each [GitHub Release](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/latest). Download the one for your OS and run it, no Python required:
+Every [GitHub Release](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/latest) ships self-contained builds (MobSF, Java runtime, jadx, adb, Frida, mitmproxy and objection are bundled; nothing else to install):
 
-- Linux: `msrf-linux-x86_64`
-- Windows: `msrf-windows-x86_64.exe`
-- macOS (Apple Silicon): `msrf-macos-arm64`
+- Windows installer: `MSRF-<version>-setup.exe` (Start menu and desktop shortcuts, optional `msrf` on PATH, clean uninstall)
+- Windows portable: `MSRF-windows-x86_64.zip`
+- Linux: `MSRF-linux-x86_64.zip`
+- macOS (Apple Silicon): `MSRF-macos-arm64.zip`
 
-Prefer pip? The same release also ships a universal wheel and sdist (`pip install msrf-0.1.0-py3-none-any.whl`), and the desktop app then launches with `msrf ui`.
+Unzip and run `msrf` (no arguments opens the desktop app; with arguments it is the CLI). Each file has a matching `.sha256` for verification.
+
+Prefer pip? The release also has the wheel and source: `pip install msrf-<version>-py3-none-any.whl`, then `msrf ui`.
 
 ## Highlights
 
@@ -60,7 +75,7 @@ Prefer pip? The same release also ships a universal wheel and sdist (`pip instal
 | `network` | adb + mitmproxy | Set up the DAST network anywhere: host IPs, CA install, device proxy, WireGuard tunnel. |
 | `iot` | nmap + binwalk | Host discovery, port/service scanning, firmware signature scan and extraction. |
 | `sim` | built-in | A self-contained DIVA-like device and Frida-script simulator; generate and test payloads with nothing external attached. |
-| `emulator` | Android SDK | Provision and drive a rooted Android emulator (Magisk + LSPosed + common Xposed modules + root checker). Runs where the SDK and host virtualization exist. |
+| `emulator` | Android SDK | Create a virtual device and launch the normal Android emulator in its own window (like Android Studio), with every step streamed to a live log. Optional: root with Magisk, LSPosed and common Xposed modules. Needs host virtualization. |
 | `appdata` | adb + sqlite | Grab a running app's databases and shared_prefs (from a device or the simulator sample data) and open them (SQLite tables/rows, XML). |
 | `findings` | built-in | Central store of all findings; auto-imports static-analysis results, accepts custom findings, and generates reports in PDF/HTML/XLSX/CSV/JSON/Markdown. |
 
@@ -134,10 +149,10 @@ A cross-platform PyQt6 GUI over the same engines:
 
 ```bash
 pip install -e ".[gui]"      # or ".[all]"
-msrf ui                    # launches the desktop app
+msrf ui                      # launches the desktop app
 ```
 
-Tabs: Dashboard (engine readiness), Static (scan, scorecard, findings, PDF), Frida Hooks (one-click inbuilt hook library, run on the built-in simulator or a real device), Dynamic, Proxy, Network, and IoT. Every action runs on a worker thread so the UI never freezes.
+Tabs: Dashboard (engine readiness), Static (every MobSF analyzer as tables, plus an internal file browser), Frida Hooks (one-click inbuilt hook library, run on the built-in simulator or a real device), Dynamic (150+ techniques), Emulator (the normal Android emulator in its own window, with an activity bar and live log), App Data (grab and open app databases), Proxy, Network, IoT, Findings (all results plus your own, exported as PDF/HTML/XLSX/CSV/JSON/Markdown) and Help. Light, dark or system theme from View > Theme. Every action runs on a worker thread so the UI never freezes.
 
 ## MCP server
 

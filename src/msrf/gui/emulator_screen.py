@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from ..platform_utils import which
+from ..platform_utils import NO_WINDOW, which
 
 _KEYS = {"Home": 3, "Back": 4, "Recents": 187, "Power": 26, "Menu": 82}
 
@@ -113,7 +113,7 @@ class EmulatorScreen(QWidget):
         if not adb:
             return
         try:
-            out = subprocess.run([adb, "devices"], capture_output=True, text=True, timeout=10)
+            out = subprocess.run([adb, "devices"], capture_output=True, text=True, timeout=10, **NO_WINDOW)
             for line in out.stdout.splitlines()[1:]:
                 parts = line.split()
                 if len(parts) >= 2 and parts[1] == "device":
@@ -147,7 +147,7 @@ class EmulatorScreen(QWidget):
         try:
             out = subprocess.run(
                 [adb, "-s", serial, "exec-out", "screencap", "-p"],
-                capture_output=True, timeout=10,
+                capture_output=True, timeout=10, **NO_WINDOW,
             )
             pix = QPixmap()
             if out.returncode == 0 and out.stdout and pix.loadFromData(out.stdout):
@@ -165,7 +165,7 @@ class EmulatorScreen(QWidget):
             self.host.submit(
                 lambda: subprocess.run(
                     [adb, "-s", self._serial, "shell", "input", "tap", str(x), str(y)],
-                    capture_output=True, timeout=10,
+                    capture_output=True, timeout=10, **NO_WINDOW,
                 )
             )
 
@@ -177,6 +177,6 @@ class EmulatorScreen(QWidget):
             self.host.submit(
                 lambda: subprocess.run(
                     [adb, "-s", serial, "shell", "input", "keyevent", str(code)],
-                    capture_output=True, timeout=10,
+                    capture_output=True, timeout=10, **NO_WINDOW,
                 )
             )

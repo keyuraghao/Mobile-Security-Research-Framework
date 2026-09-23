@@ -116,3 +116,111 @@ def test_sast_view_populates_tables(qapp, tmp_path):
     assert win.sast_view.t_perms.rowCount() == 1
     assert win.sast_view.t_code.rowCount() == 1
     assert win.sast_view.file_tree.topLevelItemCount() == 2  # 'a' dir + 'c.xml'
+
+
+class _SlowEmulator:
+    """Stands in for the emulator engine: writes to the live log over ~1.5s."""
+
+    def __init__(self, log_path):
+        self.log_path = log_path
+
+    def start(self):
+        import time
+
+        for i in range(3):
+            with self.log_path.open("a", encoding="utf-8") as fh:
+                fh.write(f"boot line {i}\n")
+            time.sleep(0.5)
+        return {"started": True}
+
+
+def _find_emulator_view(win):
+    from msrf.gui.emulator_view import EmulatorView
+
+    for i in range(win.tabs.count()):
+        if isinstance(win.tabs.widget(i), EmulatorView):
+            return win.tabs.widget(i)
+    raise AssertionError("Emulator tab not found")
+
+
+def test_emulator_tab_shows_live_log_progress_and_resets(qapp, tmp_path):
+    import time
+
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    view = _find_emulator_view(win)
+    win._engines["emulator"] = _SlowEmulator(cfg.logs_dir / "emulator.log")
+
+    launch = next(b for b in view._busy_buttons if b.text() == "Launch emulator")
+    launch.click()
+    assert view.progress.maximum() == 0          # busy animation on
+    assert not launch.isEnabled()                # no double launch
+    assert "Running: Launching emulator" in view.activity.text()
+
+    # Log lines must appear while the step is still running (live, not at the end).
+    seen_live = False
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline and not seen_live:
+        qapp.processEvents()
+        if "boot line 0" in view.output.toPlainText() and view._steps:
+            seen_live = True
+        time.sleep(0.05)
+    assert seen_live
+
+    _drain(qapp, win)
+    for _ in range(10):
+        qapp.processEvents()
+    text = view.output.toPlainText()
+    assert "boot line 2" in text
+    assert "✔ Launching emulator" in text
+    assert view.progress.maximum() == 1          # busy animation off
+    assert launch.isEnabled()
+    assert view.activity.text().startswith("Idle")
+
+
+def test_background_connection_poll_is_quiet(qapp, tmp_path):
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    assert win._conn_timer.interval() == 30000   # not every 6s any more
+    busy_before = win._busy
+    win._refresh_connection()
+    assert win._busy == busy_before              # no busy flicker for the poll
+    _drain(qapp, win)
+
+
+def test_severity_sorts_most_severe_first(qapp):
+    from msrf.gui.sast_view import _Table
+
+    t = _Table(["Severity", "Issue"])
+    t.fill([["info", "a"], ["warning", "b"], ["high", "c"], ["secure", "d"], ["high", "e"]],
+           sev_col=0)
+    order = [t.item(r, 0).text() for r in range(t.rowCount())]
+    assert order == ["high", "high", "warning", "info", "secure"]
+
+
+def test_dast_simulator_target_enumerates_and_explains_hardware_only(qapp, tmp_path):
+    from msrf.gui.dast_view import DastView
+
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    view = next(win.tabs.widget(i) for i in range(win.tabs.count())
+                if isinstance(win.tabs.widget(i), DastView))
+    view.device.setCurrentIndex(view.device.findData("sim"))
+
+    view.technique.setCurrentIndex(view.technique.findText("Enumerate — applications"))
+    view._run()
+    _drain(qapp, win)
+    out = view.output.toPlainText()
+    assert "jakhar.aseem.diva" in out
+    assert "error" not in out.lower()
+
+    view.technique.setCurrentIndex(view.technique.findText("Device — capture logcat"))
+    view._run()
+    _drain(qapp, win)
+    assert "needs a real device or the emulator" in view.output.toPlainText()

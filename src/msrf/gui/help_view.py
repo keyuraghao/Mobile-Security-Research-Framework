@@ -62,25 +62,26 @@ this machine:</p>
   <tr><td>Workspace</td><td>Where reports, captures, certificates and logs are stored.</td></tr>
 </table>
 
-<h2>Rooted emulator &mdash; step by step</h2>
-<p>The <b>Emulator</b> tab provisions and drives a rooted Android emulator so you can
-run the target app and observe its behaviour. It needs host virtualization
-(Linux <b>KVM</b>, Windows <b>WHPX/HAXM</b> or <b>Hyper-V</b>, macOS
-<b>Hypervisor.framework</b>). The Android SDK, system image and modules download
-automatically on first run (a few GB).</p>
+<h2>Android emulator: step by step</h2>
+<p>The <b>Emulator</b> tab runs the normal Android SDK emulator, the same one Android
+Studio uses. It opens in <b>its own window</b> where you see and use the phone. It
+needs host virtualization (Linux <b>KVM</b>, Windows <b>WHPX/HAXM</b> or
+<b>Hyper-V</b>, macOS <b>Hypervisor.framework</b>). The Android SDK and system image
+download automatically on first use (a few GB).</p>
 <ol>
-  <li>Open the <b>Emulator</b> tab and choose the <b>API level</b>, <b>image</b> and <b>ABI</b>
-      (x86_64 is fastest under virtualization).</li>
-  <li>Click <b>Provision all-in-one</b> &mdash; this runs, in order: <b>Setup</b> (SDK +
-      system image + AVD), <b>Start</b> (boot), <b>Root</b> (Magisk), <b>Install LSPosed</b>,
-      <b>Install modules</b> and <b>Root checker</b>. You can also run each button
-      individually.</li>
-  <li>When it finishes, open <b>LSPosed</b> inside the emulator to enable the installed
-      modules, and <b>Magisk</b> to confirm root.</li>
-  <li>Use <b>Status</b> at any time to see the tool paths and whether the emulator is
-      booted and rooted. Tick modules (JustTrustMe, Inspeckage, HideMyApplist, ...) or add
-      your own APK before installing.</li>
+  <li>Choose the <b>API level</b>, <b>image</b> and <b>ABI</b> (x86_64 is fastest), then
+      click <b>Create device</b>. Only needed once per device.</li>
+  <li>Click <b>Launch emulator</b>. The emulator window opens and Android boots.</li>
+  <li>Watch the <b>Activity</b> box (what is running and for how long) and the
+      <b>Live log</b> (every line each step writes). The log is also saved to
+      <code>logs/emulator.log</code> in your workspace; use <b>Open log file</b> or
+      <b>Copy path</b> to share it if something hangs.</li>
+  <li><b>Stop</b> closes the emulator; <b>Status</b> shows tool paths and whether it is
+      running and rooted.</li>
 </ol>
+<p><b>Optional, for deeper testing:</b> open <b>Advanced: root and Xposed</b> to root the
+device with <b>Magisk</b>, install <b>LSPosed</b> and common Xposed modules
+(JustTrustMe, Inspeckage, HideMyApplist, ...), or run <b>Rooted all-in-one</b>.</p>
 <p>Once the emulator is up, the other tabs work against it automatically: analyze in
 <b>Static</b>, hook in <b>Frida Hooks</b> / <b>Dynamic</b>, grab databases in <b>App
 Data</b>, and collect results in <b>Findings</b>.</p>

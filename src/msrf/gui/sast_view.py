@@ -54,6 +54,7 @@ class _Table(QTableWidget):
             len(headers) - 1, QHeaderView.ResizeMode.Stretch
         )
         self.setWordWrap(False)
+        self._sorted_once = False
 
     def fill(self, rows: list[list[Any]], sev_col: int | None = None) -> None:
         self.setSortingEnabled(False)
@@ -62,8 +63,9 @@ class _Table(QTableWidget):
             r = self.rowCount()
             self.insertRow(r)
             for c, value in enumerate(row):
-                item = QTableWidgetItem(str(value))
-                if sev_col is not None and c == sev_col:
+                is_sev = sev_col is not None and c == sev_col
+                item = theme.SeverityItem(str(value)) if is_sev else QTableWidgetItem(str(value))
+                if is_sev:
                     brush = _sev_brush(value)
                     if brush:
                         item.setForeground(brush)
@@ -71,6 +73,10 @@ class _Table(QTableWidget):
                         f.setBold(True)
                         item.setFont(f)
                 self.setItem(r, c, item)
+        if sev_col is not None and not self._sorted_once:
+            # Default view: most severe first. Later header clicks are kept.
+            self.horizontalHeader().setSortIndicator(sev_col, Qt.SortOrder.AscendingOrder)
+            self._sorted_once = True
         self.setSortingEnabled(True)
         self.resizeColumnsToContents()
         self.horizontalHeader().setSectionResizeMode(
@@ -526,8 +532,10 @@ class SASTView(QWidget):
 
     def _show_file(self, res: dict) -> None:
         header = f"# {res.get('path')}  ({res.get('size')} bytes)"
-        if res.get("binary"):
-            header += "  [binary — hex]"
+        if res.get("decoded") == "android-binary-xml":
+            header += "  [decoded from Android binary XML]"
+        elif res.get("binary"):
+            header += "  [binary, hex view]"
         if res.get("truncated"):
             header += "  [truncated]"
         self.viewer.setPlainText(header + "\n\n" + res.get("content", ""))

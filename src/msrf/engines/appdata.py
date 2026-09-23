@@ -24,7 +24,7 @@ from .. import dbtools
 from .. import device as dev
 from ..config import Config
 from ..exceptions import EngineError
-from ..platform_utils import require_tool, run, which
+from ..platform_utils import NO_WINDOW, require_tool, run, which
 from ..registry import register
 from ..sim import SIM_DEVICE_ID
 from .base import Engine, action
@@ -107,6 +107,7 @@ class AppDataEngine(Engine):
                 [adb, "-s", serial, "exec-out", "run-as", package, "cat", rel],
                 capture_output=True,
                 check=False,
+                **NO_WINDOW,
             )
             if proc.returncode == 0 and proc.stdout:
                 local.write_bytes(proc.stdout)

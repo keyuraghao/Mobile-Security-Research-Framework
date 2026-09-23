@@ -8,6 +8,7 @@ by ``which``.
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import platform
 import shutil
@@ -26,6 +27,13 @@ from .exceptions import CommandError, ToolNotFoundError
 IS_WINDOWS = os.name == "nt"
 IS_MACOS = sys.platform == "darwin"
 IS_LINUX = sys.platform.startswith("linux")
+
+#: Extra subprocess kwargs that stop a console window flashing up on Windows
+#: each time the (windowed) desktop app runs a console tool such as adb. Empty
+#: on Linux/macOS.
+NO_WINDOW: dict = (
+    {"creationflags": subprocess.CREATE_NO_WINDOW} if IS_WINDOWS else {}
+)
 
 
 def os_name() -> str:
@@ -183,6 +191,7 @@ def run(
     try:
         completed = subprocess.run(  # noqa: S603 - argv list, shell=False
             argv,
+            **NO_WINDOW,
             cwd=str(cwd) if cwd else None,
             env=merged_env,
             input=input_text,
@@ -212,6 +221,86 @@ def run(
     return result
 
 
+def run_logged(
+    command: Sequence[str],
+    *,
+    cwd: Path | str | None = None,
+    env: Mapping[str, str] | None = None,
+    timeout: float | None = None,
+    check: bool = True,
+    input_text: str | None = None,
+    log_path: Path | None = None,
+    tag: str | None = None,
+) -> CommandResult:
+    """Run a command, streaming its combined output to ``log_path`` line by line.
+
+    Same contract as :func:`run` (returns a :class:`CommandResult`, raises
+    :class:`CommandError` on failure/timeout when ``check``), but instead of
+    buffering silently it appends each line to ``log_path`` as it is produced.
+    This makes long, chatty steps (SDK downloads, image installs, rooting)
+    observable in real time, so a stall is visible in the log rather than
+    looking like a freeze. A watchdog kills the process on ``timeout`` even if
+    it produces no output.
+    """
+    import threading
+
+    argv = [str(part) for part in command]
+    merged_env = {**os.environ, **env} if env else None
+    logf = None
+    if log_path is not None:
+        # Line-buffered append so a tailing reader sees output immediately.
+        logf = open(log_path, "a", buffering=1, encoding="utf-8", errors="replace")  # noqa: SIM115
+    collected: list[str] = []
+    timed_out = {"hit": False}
+    proc: subprocess.Popen | None = None
+    watchdog: threading.Timer | None = None
+    try:
+        if logf and tag:
+            logf.write(f"\n$ {tag}\n")
+        proc = subprocess.Popen(  # noqa: S603 - argv list, shell=False
+            argv,
+            **NO_WINDOW,
+            cwd=str(cwd) if cwd else None,
+            env=merged_env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
+            text=True,
+            bufsize=1,
+        )
+        if input_text is not None and proc.stdin is not None:
+            # A process that exits fast can close the pipe first; that is fine.
+            with contextlib.suppress(Exception):
+                proc.stdin.write(input_text)
+                proc.stdin.close()
+        if timeout:
+            def _kill() -> None:
+                timed_out["hit"] = True
+                with contextlib.suppress(Exception):
+                    proc.kill()
+            watchdog = threading.Timer(timeout, _kill)
+            watchdog.start()
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            collected.append(line)
+            if logf:
+                logf.write(line)
+        proc.wait()
+    finally:
+        if watchdog:
+            watchdog.cancel()
+        if logf:
+            logf.close()
+    out = "".join(collected)
+    rc = proc.returncode if proc else -1
+    if timed_out["hit"]:
+        raise CommandError(argv, 124, out, f"Timed out after {timeout}s")
+    result = CommandResult(command=argv, returncode=rc, stdout=out, stderr="")
+    if check and not result.ok:
+        raise CommandError(argv, rc, out, "")
+    return result
+
+
 def spawn(
     command: Sequence[str],
     *,
@@ -231,6 +320,7 @@ def spawn(
     out = open(stdout, "ab") if stdout else subprocess.DEVNULL  # noqa: SIM115
     return subprocess.Popen(  # noqa: S603 - argv list, shell=False
         argv,
+        **NO_WINDOW,
         cwd=str(cwd) if cwd else None,
         env=merged_env,
         stdout=out,

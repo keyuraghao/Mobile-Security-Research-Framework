@@ -7,7 +7,7 @@ macOS. The stored preference is ``"light"``, ``"dark"`` or ``"system"``
 from __future__ import annotations
 
 from PyQt6.QtGui import QColor, QPalette
-from PyQt6.QtWidgets import QApplication, QStyleFactory
+from PyQt6.QtWidgets import QApplication, QStyleFactory, QTableWidgetItem
 
 THEMES: tuple[str, ...] = ("light", "dark", "system")
 
@@ -47,6 +47,26 @@ SEVERITY_COLORS = {
     "dangerous": "#e05561",
     "normal": "#3fb950",
 }
+
+#: Sort order for severities, most severe first (unknown values sort last).
+SEVERITY_RANK = {
+    "critical": 0, "high": 1, "dangerous": 1, "warning": 2, "medium": 2,
+    "hotspot": 2, "low": 3, "info": 4, "note": 5, "normal": 6, "secure": 7,
+    "good": 7,
+}
+
+
+class SeverityItem(QTableWidgetItem):
+    """Table cell that sorts by severity rank (high before warning before info)
+    instead of alphabetically."""
+
+    def _rank(self) -> int:
+        return SEVERITY_RANK.get(self.text().strip().lower(), 99)
+
+    def __lt__(self, other: QTableWidgetItem) -> bool:
+        if isinstance(other, SeverityItem) and self._rank() != other._rank():
+            return self._rank() < other._rank()
+        return self.text() < other.text()
 
 
 def resolve_mode(mode: str, app: QApplication) -> str:
@@ -103,6 +123,8 @@ QPushButton:hover {{ border-color: {c["accent"]}; }}
 QPushButton:disabled {{ color: {c["dim"]}; }}
 QPushButton#primary {{ background: {c["accent"]}; color: {c["accent_text"]};
     border-color: {c["accent"]}; font-weight: 600; }}
+QPushButton#primary:disabled {{ background: {c["button"]}; color: {c["dim"]};
+    border-color: {c["border"]}; }}
 QPlainTextEdit, QTextEdit {{ font-family: Consolas, 'DejaVu Sans Mono', monospace; }}
 QScrollBar:vertical {{ background: {c["window"]}; width: 12px; }}
 QScrollBar::handle:vertical {{ background: {c["border"]}; border-radius: 5px; min-height: 24px; }}
