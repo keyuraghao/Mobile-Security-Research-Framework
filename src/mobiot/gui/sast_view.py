@@ -130,6 +130,12 @@ class SASTView(QWidget):
         self.t_components = _Table(["Type", "Name", "Exported"])
         self.t_api = _Table(["API usage", "Files"])
         self.t_malware = _Table(["Permission", "Type", "Description"])
+        self.t_apkid = _Table(["DEX", "Type", "Value"])
+        self.t_behaviour = _Table(["Severity", "Behaviour", "Files"])
+        self.t_sbom = _Table(["Package / dependency"])
+        self.t_niap = _Table(["Requirement", "Detail"])
+        self.t_permmap = _Table(["Permission", "Files"])
+        self.t_ios = _Table(["Section", "Property", "Value"])
         self.t_strings = _Table(["Source", "String"])
         self.raw_view = QPlainTextEdit()
         self.raw_view.setReadOnly(True)
@@ -146,11 +152,17 @@ class SASTView(QWidget):
         self.tabs.addTab(self.t_binary, "Binary / NDK")
         self.tabs.addTab(self.t_api, "API")
         self.tabs.addTab(self.t_malware, "Malware Perms")
+        self.tabs.addTab(self.t_apkid, "APKID")
+        self.tabs.addTab(self.t_behaviour, "Behaviour")
+        self.tabs.addTab(self.t_niap, "NIAP")
+        self.tabs.addTab(self.t_permmap, "Perm Mapping")
         self.tabs.addTab(self.t_trackers, "Trackers")
-        self.tabs.addTab(self.t_urls, "URLs / Domains")
+        self.tabs.addTab(self.t_urls, "URLs / Domains / Email")
         self.tabs.addTab(self.t_secrets, "Secrets")
+        self.tabs.addTab(self.t_sbom, "SBOM")
         self.tabs.addTab(self.t_strings, "Strings")
         self.tabs.addTab(self.t_components, "Components")
+        self.tabs.addTab(self.t_ios, "iOS")
         self.tabs.addTab(self._build_files_tab(), "Files")
         self.tabs.addTab(self.raw_view, "Raw JSON")
 
@@ -233,11 +245,17 @@ class SASTView(QWidget):
         self._fill_binary(ctx)
         self._fill_api(ctx)
         self._fill_malware(ctx)
+        self._fill_apkid(ctx)
+        self._fill_behaviour(ctx)
+        self._fill_niap(ctx)
+        self._fill_permmap(ctx)
         self._fill_trackers(ctx)
         self._fill_urls(ctx)
         self._fill_secrets(ctx)
+        self._fill_sbom(ctx)
         self._fill_strings(ctx)
         self._fill_components(ctx)
+        self._fill_ios(ctx)
         self._fill_files(ctx.get("files") or [])
         import json as _json
 
@@ -330,7 +348,12 @@ class SASTView(QWidget):
 
     def _fill_binary(self, ctx: dict) -> None:
         rows = []
-        for so in ctx.get("binary_analysis") or []:
+        binary = ctx.get("binary_analysis") or []
+        if isinstance(binary, dict):  # iOS shape -> surfaced in the iOS tab
+            binary = []
+        for so in binary:
+            if not isinstance(so, dict):
+                continue
             name = so.get("name")
             for check in ("nx", "pie", "stack_canary", "relocation_readonly", "rpath", "runpath", "fortify", "symbol"):
                 c = so.get(check)
@@ -379,7 +402,78 @@ class SASTView(QWidget):
         for u in ctx.get("urls") or []:
             for link in u.get("urls", []):
                 rows.append(["url", link, u.get("path", "")])
-        self.t_urls.fill(rows)
+        for em in ctx.get("emails") or []:
+            if isinstance(em, dict):
+                for addr in em.get("emails", []):
+                    rows.append(["email", addr, em.get("path", "")])
+            else:
+                rows.append(["email", str(em), ""])
+        for fb in ctx.get("firebase_urls") or []:
+            val = fb.get("url") if isinstance(fb, dict) else fb
+            rows.append(["firebase", str(val), "open" if (isinstance(fb, dict) and fb.get("open")) else ""])
+        self.t_urls.fill(rows, sev_col=0)
+
+    def _fill_apkid(self, ctx: dict) -> None:
+        rows = []
+        for dexname, data in (ctx.get("apkid") or {}).items():
+            for key, vals in (data or {}).items():
+                vals = vals if isinstance(vals, list) else [vals]
+                for v in vals:
+                    rows.append([dexname, key, str(v)])
+        self.t_apkid.fill(rows)
+
+    def _fill_behaviour(self, ctx: dict) -> None:
+        rows = []
+        for _bid, data in (ctx.get("behaviour") or {}).items():
+            meta = (data or {}).get("metadata") or {}
+            files = (data or {}).get("files") or {}
+            rows.append([meta.get("severity", "info"), meta.get("description", _bid), f"{len(files)} file(s)"])
+        self.t_behaviour.fill(rows, sev_col=0)
+
+    def _fill_niap(self, ctx: dict) -> None:
+        rows = []
+        for req, data in (ctx.get("niap_analysis") or {}).items():
+            detail = data.get("description") if isinstance(data, dict) else data
+            rows.append([req, _clean(detail)])
+        self.t_niap.fill(rows)
+
+    def _fill_permmap(self, ctx: dict) -> None:
+        rows = []
+        for perm, data in (ctx.get("permission_mapping") or {}).items():
+            files = data if isinstance(data, list | dict) else [data]
+            n = len(files) if hasattr(files, "__len__") else 0
+            rows.append([perm, f"{n} location(s)"])
+        self.t_permmap.fill(rows)
+
+    def _fill_sbom(self, ctx: dict) -> None:
+        pkgs = (ctx.get("sbom") or {}).get("sbom_packages") or []
+        rows = []
+        for p in pkgs:
+            rows.append([p.get("name", str(p)) if isinstance(p, dict) else str(p)])
+        self.t_sbom.fill(rows)
+
+    def _fill_ios(self, ctx: dict) -> None:
+        """Surface iOS-specific analyzer output (defensive across shapes)."""
+        rows: list[list[Any]] = []
+
+        def add(section, obj):
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    rows.append([section, k, _clean(v)[:160]])
+            elif isinstance(obj, list):
+                for i, v in enumerate(obj):
+                    rows.append([section, str(i), _clean(v)[:160]])
+            elif obj:
+                rows.append([section, "", _clean(obj)[:160]])
+
+        add("Info.plist", ctx.get("info_plist"))
+        add("ATS", ctx.get("ats_analysis"))
+        add("Binary info", ctx.get("binary_info"))
+        add("Mach-O", ctx.get("macho_analysis"))
+        add("Dylib", ctx.get("dylib_analysis"))
+        add("Frameworks", ctx.get("framework_analysis"))
+        add("App Store", ctx.get("appstore_details"))
+        self.t_ios.fill(rows)
 
     def _fill_secrets(self, ctx: dict) -> None:
         self.t_secrets.fill([[s] for s in ctx.get("secrets") or []])
