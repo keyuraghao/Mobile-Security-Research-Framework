@@ -1,4 +1,4 @@
-# mobiot
+# Mobile Security and Research Framework
 
 [![CI](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/actions/workflows/ci.yml/badge.svg)](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/keyuraghao/Mobile_SAST_DAST_Pentest?sort=semver)](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/latest)
@@ -9,9 +9,9 @@
 
 Unified, cross-platform Mobile and IoT SAST / DAST / penetration-testing toolkit with a desktop app, a CLI, and an MCP server over MobSF, Frida, objection, mitmproxy, nmap, and binwalk.
 
-mobiot glues best-in-class security engines together behind one consistent interface so you (or an AI agent) can run an assessment end to end: static analysis, dynamic analysis, runtime instrumentation, traffic interception from anywhere, and IoT/firmware recon.
+Mobile Security and Research Framework glues best-in-class security engines together behind one consistent interface so you (or an AI agent) can run an assessment end to end: static analysis, dynamic analysis, runtime instrumentation, traffic interception from anywhere, and IoT/firmware recon.
 
-> Authorised testing only. mobiot is for assessing applications, devices, and networks that you own or have explicit written permission to test. You are responsible for complying with all applicable laws.
+> Authorised testing only. This toolkit is for assessing applications, devices, and networks that you own or have explicit written permission to test. You are responsible for complying with all applicable laws.
 
 ## Screenshots
 

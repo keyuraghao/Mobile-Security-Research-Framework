@@ -54,12 +54,6 @@ jobs:
       - name: Build self-contained bundle
         run: pyinstaller --noconfirm --clean packaging/mobiot.spec
 
-      - name: Package bundle + checksum
-        shell: bash
-        run: |
-          python -c "import shutil; shutil.make_archive('${{ matrix.artifact }}', 'zip', 'dist', 'mobiot')"
-          python -c "import hashlib,sys; p='${{ matrix.artifact }}.zip'; open(p+'.sha256','w').write(hashlib.sha256(open(p,'rb').read()).hexdigest()+'  '+p+'\n')"
-
       - name: Resolve tag
         id: tag
         shell: bash
@@ -69,7 +63,26 @@ jobs:
         shell: bash
         run: python packaging/extract_changelog.py "${{ steps.tag.outputs.name }}" > RELEASE_NOTES.md
 
-      - name: Attach bundle to release
+      - name: Package portable bundle + checksum
+        shell: bash
+        run: |
+          python -c "import shutil; shutil.make_archive('${{ matrix.artifact }}', 'zip', 'dist', 'mobiot')"
+          python -c "import hashlib,sys; p='${{ matrix.artifact }}.zip'; open(p+'.sha256','w').write(hashlib.sha256(open(p,'rb').read()).hexdigest()+'  '+p+'\n')"
+
+      - name: Build Windows installer (Inno Setup)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          $v = "${{ steps.tag.outputs.name }}".TrimStart('v')
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { $iscc = "iscc" }
+          & $iscc "/DVersion=$v" "/DSource=dist\mobiot" "packaging\installer.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
+          $setup = "dist\MSRF-$v-setup.exe"
+          (Get-FileHash $setup -Algorithm SHA256).Hash.ToLower() + "  " + (Split-Path $setup -Leaf) | Out-File -Encoding ascii "$setup.sha256"
+
+      - name: Attach portable bundle to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
@@ -78,6 +91,18 @@ jobs:
           files: |
             ${{ matrix.artifact }}.zip
             ${{ matrix.artifact }}.zip.sha256
+          fail_on_unmatched_files: true
+
+      - name: Attach Windows installer to release
+        if: runner.os == 'Windows'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: mobiot ${{ steps.tag.outputs.name }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            dist/MSRF-*-setup.exe
+            dist/MSRF-*-setup.exe.sha256
           fail_on_unmatched_files: true
 
   build-python:

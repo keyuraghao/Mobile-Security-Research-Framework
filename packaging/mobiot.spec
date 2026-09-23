@@ -64,6 +64,7 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
+_icon = os.path.join(_root, "src", "mobiot", "data", "icon.ico")
 exe = EXE(
     pyz,
     a.scripts,
@@ -72,6 +73,7 @@ exe = EXE(
     name="mobiot",
     console=False,
     disable_windowed_traceback=False,
+    icon=_icon if os.path.isfile(_icon) else None,
 )
 coll = COLLECT(
     exe,

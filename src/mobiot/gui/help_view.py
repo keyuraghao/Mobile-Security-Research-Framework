@@ -28,7 +28,7 @@ HELP_HTML = """
   .note {{ background: #fff8e1; border: 1px solid #e0c060; padding: 8px; }}
 </style>
 
-<h1>mobiot {version}</h1>
+<h1>Mobile Security and Research Framework <small>{version}</small></h1>
 <p>A self-contained Mobile &amp; IoT SAST / DAST / penetration-testing toolkit.
 Everything it needs is bundled: MobSF, a Java runtime, jadx, adb, Frida,
 frida-server, mitmproxy and objection. No install, no server, no login.</p>

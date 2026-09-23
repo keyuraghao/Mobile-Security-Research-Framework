@@ -85,7 +85,13 @@ class MainWindow(QMainWindow):
         self._engines: dict[str, Any] = {}
         self._busy = 0
 
-        self.setWindowTitle(f"mobiot  —  Mobile & IoT Security Toolkit  {get_version()}")
+        from PyQt6.QtCore import QSettings
+
+        self._settings = QSettings()
+
+        self.setWindowTitle(
+            f"Mobile Security and Research Framework  {get_version()}"
+        )
         self.setWindowIcon(app_icon())
         self.resize(1180, 760)
 
@@ -165,6 +171,11 @@ class MainWindow(QMainWindow):
     def status(self, message: str, timeout: int = 0) -> None:
         self.statusBar().showMessage(message, timeout)
 
+    def _set_theme(self, mode: str) -> None:
+        self._settings.setValue("theme", mode)
+        resolved = theme.apply(QApplication.instance(), mode)
+        self.status(f"Theme: {mode} ({resolved})", 4000)
+
     def import_scan_findings(self, scan_hash: str) -> None:
         """Auto-collect a completed scan's findings into the Findings store."""
         self.submit(
@@ -189,6 +200,19 @@ class MainWindow(QMainWindow):
         m_file.addAction(act_exit)
 
         self._view_menu = mbar.addMenu("&View")
+        theme_menu = self._view_menu.addMenu("&Theme")
+        from PyQt6.QtGui import QActionGroup
+
+        group = QActionGroup(self)
+        group.setExclusive(True)
+        current = self._settings.value("theme", "light")
+        for mode in ("light", "dark", "system"):
+            act = QAction(mode.capitalize(), self, checkable=True)
+            act.setChecked(mode == current)
+            act.triggered.connect(lambda _=False, m=mode: self._set_theme(m))
+            group.addAction(act)
+            theme_menu.addAction(act)
+        self._view_menu.addSeparator()
 
         m_tools = mbar.addMenu("&Tools")
         act_pre = QAction("&Preflight (check readiness)", self)
@@ -203,7 +227,7 @@ class MainWindow(QMainWindow):
         act_doc.setShortcut("F1")
         act_doc.triggered.connect(lambda: self.tabs.setCurrentWidget(self.tabs.widget(self.tabs.count() - 1)))
         m_help.addAction(act_doc)
-        act_about = QAction("&About mobiot", self)
+        act_about = QAction("&About", self)
         act_about.triggered.connect(self._about)
         m_help.addAction(act_about)
 
@@ -240,11 +264,12 @@ class MainWindow(QMainWindow):
 
     def _about(self) -> None:
         box = QMessageBox(self)
-        box.setWindowTitle("About mobiot")
+        box.setWindowTitle("About")
         box.setIconPixmap(app_icon().pixmap(64, 64))
         box.setTextFormat(Qt.TextFormat.RichText)
         box.setText(
-            f"<h2>mobiot {get_version()}</h2>"
+            f"<h2>Mobile Security and Research Framework</h2>"
+            f"<p>version {get_version()}</p>"
             "<p>Unified, self-contained <b>Mobile &amp; IoT SAST / DAST / "
             "penetration-testing</b> toolkit.</p>"
             "<p>Bundles MobSF, Frida, objection, mitmproxy, nmap and binwalk behind "
@@ -588,13 +613,15 @@ def run() -> int:
 
     bundled.activate(config)
     app = QApplication(sys.argv)
-    app.setApplicationName("mobiot")
-    app.setApplicationDisplayName("mobiot")
+    app.setApplicationName("mobiot")  # technical id (QSettings/platform); stable
+    app.setApplicationDisplayName("Mobile Security and Research Framework")
     app.setApplicationVersion(get_version())
     app.setOrganizationName("mobiot")
     app.setDesktopFileName("mobiot")
     app.setWindowIcon(app_icon())
-    theme.apply(app)
+    from PyQt6.QtCore import QSettings
+
+    theme.apply(app, QSettings().value("theme", "light"))
     window = MainWindow(config)
     window.show()
     return app.exec()

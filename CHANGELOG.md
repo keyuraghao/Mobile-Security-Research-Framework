@@ -6,6 +6,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-09-22
+
+### Added
+- **Windows installer** — a proper Inno Setup installer (`MSRF-<version>-setup.exe`)
+  built in CI alongside the portable bundle: Start-menu and optional desktop
+  shortcuts, an opt-in "add to PATH" for the CLI/MCP, per-user workspace cleanup on
+  uninstall, and the app icon. Attached to every release with a `.sha256`.
+- **Light / Dark / System theme** — a Fusion-based theming system (View menu ->
+  Theme) with palette + stylesheet for both modes, severity colours legible on
+  either, persisted via `QSettings`. Follows the OS in System mode.
+- **Application icon / favicon** shipped as `icon.ico` (multi-size) and `icon.png`,
+  used for the window, the installer, and the built executable.
+
+### Changed
+- **Renamed to "Mobile Security and Research Framework"** across the desktop app
+  (window title, About dialog, display name), Help tab, installer and README. The
+  package, CLI command and MCP server name remain `mobiot` for compatibility.
+
 ## [0.3.2] - 2026-09-22
 
 ### Fixed
