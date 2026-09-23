@@ -8,13 +8,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.1] - 2026-09-22
 
+### Added
+- **Dockable live emulator screen** — a side-by-side panel that mirrors a connected emulator/device (screencap polling, tap + hardware-key forwarding via the bundled adb) and can be floated into its own window, so it stays usable while working in any other tab (View menu / toolbar toggle).
+- **Emulator API-level dropdown** spans API 7 (Android 2.1) to 35 (Android 15).
+- **In-app emulator flow guide** on the Emulator and Help tabs (step-by-step provisioning).
+- **Automated releases**: per-release notes generated from `CHANGELOG.md` and a `.sha256` checksum attached for every asset; README status badges (CI, release, downloads, Python, platforms, license).
+
 ### Fixed
 - Emulator (and other) downloads failed with `SSL: CERTIFICATE_VERIFY_FAILED` in the standalone app; downloads now use httpx with the bundled `certifi` CA store.
 - `emulator setup` now auto-downloads the Android command-line tools (using the bundled JRE) and installs the emulator + system image, instead of erroring when no SDK is present.
 - LSPosed / Magisk / Xposed-module downloads resolve the latest release via the GitHub API (no more 404s), preferring release over debug builds.
-
-### Added
-- Emulator API-level dropdown spans API 7 (Android 2.1) to 35 (Android 15).
 
 ## [0.3.0] - 2026-09-22
 

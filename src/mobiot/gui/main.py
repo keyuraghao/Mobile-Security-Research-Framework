@@ -18,6 +18,7 @@ from PyQt6.QtGui import QAction, QFont
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
+    QDockWidget,
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
@@ -42,6 +43,7 @@ from ..registry import all_engines, get_engine
 from . import theme
 from .appdata_view import AppDataView
 from .dast_view import DastView
+from .emulator_screen import EmulatorScreen
 from .emulator_view import EmulatorView
 from .findings_view import FindingsView
 from .help_view import HelpView
@@ -109,6 +111,23 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.findings_view, "Findings")
         self.tabs.addTab(HelpView(), "Help")
 
+        # Dockable live emulator screen: side-by-side with the tabs, or floated
+        # into its own window, so it stays usable while working in any tab.
+        self.screen_dock = QDockWidget("Emulator Screen", self)
+        self.screen_dock.setObjectName("emulator_screen_dock")
+        self.screen_dock.setWidget(EmulatorScreen(self))
+        self.screen_dock.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            | QDockWidget.DockWidgetFeature.DockWidgetClosable
+        )
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.screen_dock)
+        self.screen_dock.hide()
+        toggle = self.screen_dock.toggleViewAction()
+        toggle.setText("Emulator screen (side-by-side)")
+        self._view_menu.addAction(toggle)
+        self._toolbar.addAction(toggle)
+
         # Periodic connection-info refresh.
         self._conn_timer = QTimer(self)
         self._conn_timer.timeout.connect(self._refresh_connection)
@@ -169,6 +188,8 @@ class MainWindow(QMainWindow):
         act_exit.triggered.connect(self.close)
         m_file.addAction(act_exit)
 
+        self._view_menu = mbar.addMenu("&View")
+
         m_tools = mbar.addMenu("&Tools")
         act_pre = QAction("&Preflight (check readiness)", self)
         act_pre.triggered.connect(lambda: (self.tabs.setCurrentIndex(0), self._refresh_dashboard()))
@@ -188,6 +209,7 @@ class MainWindow(QMainWindow):
 
     def _build_toolbar(self) -> None:
         tb = self.addToolBar("Main")
+        self._toolbar = tb
         tb.setMovable(False)
         a_open = QAction("Open App", self)
         a_open.triggered.connect(self._menu_open_app)

@@ -1,16 +1,17 @@
 name: Release
 
-# Builds standalone desktop-app binaries for Linux, Windows and macOS and
-# attaches them (plus the Python wheel/sdist) to the GitHub Release for a tag.
+# Builds standalone desktop-app bundles for Linux, Windows and macOS and
+# attaches them (plus the Python wheel/sdist and .sha256 checksums) to a GitHub
+# Release whose notes are generated from CHANGELOG.md for the tag.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to build and attach assets to (e.g. v0.1.0)"
+        description: "Tag to build and attach assets to (e.g. v0.3.1)"
         required: true
-        default: "v0.1.0"
+        default: "v0.3.1"
 
 permissions:
   contents: write
@@ -25,13 +26,10 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact: mobiot-linux-x86_64
-            ext: ""
           - os: windows-latest
             artifact: mobiot-windows-x86_64
-            ext: ".exe"
           - os: macos-latest
             artifact: mobiot-macos-arm64
-            ext: ""
     steps:
       - uses: actions/checkout@v4
 
@@ -56,21 +54,30 @@ jobs:
       - name: Build self-contained bundle
         run: pyinstaller --noconfirm --clean packaging/mobiot.spec
 
-      - name: Package bundle as zip
+      - name: Package bundle + checksum
         shell: bash
         run: |
           python -c "import shutil; shutil.make_archive('${{ matrix.artifact }}', 'zip', 'dist', 'mobiot')"
+          python -c "import hashlib,sys; p='${{ matrix.artifact }}.zip'; open(p+'.sha256','w').write(hashlib.sha256(open(p,'rb').read()).hexdigest()+'  '+p+'\n')"
 
       - name: Resolve tag
         id: tag
         shell: bash
         run: echo "name=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
+      - name: Generate release notes from CHANGELOG
+        shell: bash
+        run: python packaging/extract_changelog.py "${{ steps.tag.outputs.name }}" > RELEASE_NOTES.md
+
       - name: Attach bundle to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
-          files: ${{ matrix.artifact }}.zip
+          name: mobiot ${{ steps.tag.outputs.name }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            ${{ matrix.artifact }}.zip
+            ${{ matrix.artifact }}.zip.sha256
           fail_on_unmatched_files: true
 
   build-python:
@@ -85,14 +92,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip build
           python -m build
+      - name: Checksums
+        shell: bash
+        run: |
+          cd dist
+          for f in *.whl *.tar.gz; do python -c "import hashlib,sys; p='$f'; open(p+'.sha256','w').write(hashlib.sha256(open(p,'rb').read()).hexdigest()+'  '+p+'\n')"; done
       - name: Resolve tag
         id: tag
         shell: bash
         run: echo "name=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+      - name: Generate release notes from CHANGELOG
+        shell: bash
+        run: python packaging/extract_changelog.py "${{ steps.tag.outputs.name }}" > RELEASE_NOTES.md
       - name: Attach wheel + sdist to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
+          name: mobiot ${{ steps.tag.outputs.name }}
+          body_path: RELEASE_NOTES.md
           files: |
             dist/*.whl
             dist/*.tar.gz
+            dist/*.sha256

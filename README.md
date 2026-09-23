@@ -1,5 +1,12 @@
 # mobiot
 
+[![CI](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/actions/workflows/ci.yml/badge.svg)](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/keyuraghao/Mobile_SAST_DAST_Pentest?sort=semver)](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/keyuraghao/Mobile_SAST_DAST_Pentest/total)](https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases)
+![Python](https://img.shields.io/badge/python-3.12%2B-blue)
+![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey)
+[![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
+
 Unified, cross-platform Mobile and IoT SAST / DAST / penetration-testing toolkit with a desktop app, a CLI, and an MCP server over MobSF, Frida, objection, mitmproxy, nmap, and binwalk.
 
 mobiot glues best-in-class security engines together behind one consistent interface so you (or an AI agent) can run an assessment end to end: static analysis, dynamic analysis, runtime instrumentation, traffic interception from anywhere, and IoT/firmware recon.
