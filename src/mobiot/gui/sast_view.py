@@ -245,6 +245,9 @@ class SASTView(QWidget):
         self.host.status(
             f"Analysis complete — score {appsec.get('security_score')}/100", 8000
         )
+        # Auto-collect the findings into the central Findings store.
+        if self._hash and hasattr(self.host, "import_scan_findings"):
+            self.host.import_scan_findings(self._hash)
 
     def _export(self) -> None:
         if not self._hash:

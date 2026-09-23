@@ -40,7 +40,9 @@ from .. import get_version
 from ..config import Config, load_config
 from ..registry import all_engines, get_engine
 from . import theme
+from .appdata_view import AppDataView
 from .dast_view import DastView
+from .findings_view import FindingsView
 from .help_view import HelpView
 from .sast_view import SASTView
 from .worker import Worker
@@ -91,13 +93,16 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.tabs)
 
         self.sast_view = SASTView(self)
+        self.findings_view = FindingsView(self)
         self.tabs.addTab(self._tab_dashboard(), "Dashboard")
         self.tabs.addTab(self.sast_view, "Static (SAST)")
         self.tabs.addTab(self._tab_hooks(), "Frida Hooks")
         self.tabs.addTab(DastView(self), "Dynamic (DAST)")
+        self.tabs.addTab(AppDataView(self), "App Data")
         self.tabs.addTab(self._tab_proxy(), "Proxy")
         self.tabs.addTab(self._tab_network(), "Network")
         self.tabs.addTab(self._tab_iot(), "IoT")
+        self.tabs.addTab(self.findings_view, "Findings")
         self.tabs.addTab(HelpView(), "Help")
 
         # Periodic connection-info refresh.
@@ -136,6 +141,14 @@ class MainWindow(QMainWindow):
 
     def status(self, message: str, timeout: int = 0) -> None:
         self.statusBar().showMessage(message, timeout)
+
+    def import_scan_findings(self, scan_hash: str) -> None:
+        """Auto-collect a completed scan's findings into the Findings store."""
+        self.submit(
+            lambda: self.engine("findings").import_scan(scan_hash),
+            on_result=lambda d: self.findings_view.refresh(),
+            on_error=lambda e: None,
+        )
 
     # -- chrome ----------------------------------------------------------
 

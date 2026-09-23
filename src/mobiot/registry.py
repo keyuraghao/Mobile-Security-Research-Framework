@@ -71,7 +71,9 @@ def _load_builtins() -> None:
         return
     # Importing each module triggers its @register decorator.
     from .engines import (  # noqa: F401
+        appdata,
         dast,
+        findings,
         hooks,
         iot,
         network,

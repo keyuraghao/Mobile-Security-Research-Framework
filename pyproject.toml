@@ -35,6 +35,8 @@ dependencies = [
     "fastmcp>=2.0",
     "defusedxml>=0.7",
     "waitress>=3.0",
+    "openpyxl>=3.1",
+    "fpdf2>=2.7",
 ]
 
 [project.optional-dependencies]
@@ -92,6 +94,7 @@ ignore = [
 "src/mobiot/cli.py" = ["B008"]  # typer.Option/Argument defaults are the Typer idiom
 "src/mobiot/gui/*" = ["E501", "SIM118"]  # long QSS/HTML/lambda lines; Qt .keys() is not a dict
 "src/mobiot/report_format.py" = ["E501"]  # descriptive display strings
+"src/mobiot/reporting.py" = ["E501"]  # long HTML/report template strings
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

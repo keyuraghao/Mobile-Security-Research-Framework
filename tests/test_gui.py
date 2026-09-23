@@ -54,9 +54,11 @@ def test_mainwindow_builds_all_tabs(qapp, tmp_path):
         "Static (SAST)",
         "Frida Hooks",
         "Dynamic (DAST)",
+        "App Data",
         "Proxy",
         "Network",
         "IoT",
+        "Findings",
         "Help",
     ]
 
