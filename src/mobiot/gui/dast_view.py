@@ -90,6 +90,15 @@ class DastView(QWidget):
             {"label": "Objection — list keystore", "engine": "runtime", "method": "keystore_list", "pkg": True},
             {"label": "Objection — list classes", "engine": "runtime", "method": "list_classes", "pkg": True},
             {"label": "Objection — run command", "engine": "runtime", "method": "run_command", "pkg": True, "cmd": True},
+            # On-device techniques (adb) — need a real connected device.
+            {"label": "Device — capture logcat", "engine": "dast", "method": "logcat"},
+            {"label": "Device — dumpsys (all)", "engine": "dast", "method": "dumpsys"},
+            {"label": "Device — dumpsys (service)", "engine": "dast", "method": "dumpsys", "cmd": True, "cmd_arg": "service"},
+            {"label": "Device — screenshot", "engine": "dast", "method": "screenshot"},
+            {"label": "Device — install APK", "engine": "dast", "method": "install_app", "cmd": True, "cmd_arg": "apk_path"},
+            {"label": "Device — pull APK(s)", "engine": "dast", "method": "pull_apk", "pkg": True},
+            {"label": "Device — start activity", "engine": "dast", "method": "start_activity", "pkg": True, "cmd": True, "cmd_arg": "activity"},
+            {"label": "Device — send deeplink", "engine": "dast", "method": "deeplink", "cmd": True, "cmd_arg": "uri"},
         ]
         self._techniques = base
         for t in base:
@@ -107,14 +116,32 @@ class DastView(QWidget):
                 self._techniques.append(spec)
                 self.technique.addItem(spec["label"], spec)
 
+        def add_mobsf_scripts(res):
+            for s in res.get("scripts", []):
+                spec = {
+                    "label": f"MobSF [{s['platform']}/{s['category']}] {s['name']}",
+                    "engine": "hooks",
+                    "method": "test",
+                    "mobsf_script": s["id"],
+                }
+                self._techniques.append(spec)
+                self.technique.addItem(spec["label"], spec)
+
         self.host.submit(
             lambda: self.host.engine("hooks").list_templates()["templates"],
             on_result=add_hooks,
+        )
+        self.host.submit(
+            lambda: self.host.engine("hooks").mobsf_scripts(),
+            on_result=add_mobsf_scripts,
         )
 
     def _technique_changed(self) -> None:
         spec = self.technique.currentData() or {}
         self.command.setEnabled(bool(spec.get("cmd")))
+        self.command.setPlaceholderText(
+            f"{spec.get('cmd_arg', 'command')} …" if spec.get("cmd") else "n/a"
+        )
 
     def _run(self) -> None:
         spec = self.technique.currentData()
@@ -128,16 +155,20 @@ class DastView(QWidget):
         method = spec["method"]
         kwargs: dict[str, Any] = {}
         if engine == "hooks":
-            kwargs["template"] = spec["template"]
             kwargs["device_id"] = "sim" if device_choice == "sim" else None
-            if spec.get("params"):
-                # Best-effort defaults for parameterised hooks.
-                defaults = {"CLASS": pkg + ".MainActivity", "METHOD": "onCreate", "FILTER": pkg}
-                kwargs["params"] = {k: defaults.get(k, "") for k in spec["params"]}
-        elif spec.get("pkg"):
             kwargs["package"] = pkg
+            if spec.get("mobsf_script"):
+                kwargs["mobsf_script"] = spec["mobsf_script"]
+            else:
+                kwargs["template"] = spec["template"]
+                if spec.get("params"):
+                    defaults = {"CLASS": pkg + ".MainActivity", "METHOD": "onCreate", "FILTER": pkg}
+                    kwargs["params"] = {k: defaults.get(k, "") for k in spec["params"]}
+        else:
+            if spec.get("pkg"):
+                kwargs["package"] = pkg
             if spec.get("cmd"):
-                kwargs["command"] = self.command.text().strip()
+                kwargs[spec.get("cmd_arg", "command")] = self.command.text().strip()
 
         self.host.submit(
             lambda: getattr(self.host.engine(engine), method)(**kwargs),

@@ -9,13 +9,15 @@ Combines two capabilities:
 """
 from __future__ import annotations
 
+import subprocess
+import time
 from pathlib import Path
 from typing import Any
 
 from .. import device as dev
 from ..config import Config
 from ..exceptions import EngineError, ToolNotFoundError
-from ..platform_utils import frida_server_arch, require_tool, which
+from ..platform_utils import frida_server_arch, require_tool, run, which
 from ..provisioning import ensure_frida_server
 from ..registry import register
 from .base import Engine, action
@@ -161,3 +163,108 @@ class DASTEngine(Engine):
     def dynamic_report(self, scan_hash: str) -> dict[str, Any]:
         with self.server.client() as client:
             return client.dynamic_report_json(scan_hash)
+
+    # -- on-device techniques (adb) --------------------------------------
+
+    @action("Install an APK onto a device.", mutating=True)
+    def install_app(self, apk_path: str, serial: str | None = None) -> dict[str, Any]:
+        out = dev.install(Path(apk_path).expanduser(), serial=serial)
+        return {"output": out}
+
+    @action("Pull an installed app's APK(s) off the device.")
+    def pull_apk(
+        self, package: str, serial: str | None = None, out_dir: str | None = None
+    ) -> dict[str, Any]:
+        adb = dev.adb_path()
+        serial = dev.resolve_serial(serial)
+        paths = dev.shell(["pm", "path", package], serial=serial).splitlines()
+        remotes = [p.split(":", 1)[1].strip() for p in paths if p.startswith("package:")]
+        if not remotes:
+            raise EngineError("dast", f"App {package!r} not found on device.")
+        dest = Path(out_dir).expanduser() if out_dir else self.config.workspace / "apks" / package
+        dest.mkdir(parents=True, exist_ok=True)
+        pulled = []
+        for r in remotes:
+            local = dest / Path(r).name
+            run([adb, "-s", serial, "pull", r, str(local)], check=False)
+            pulled.append(str(local))
+        return {"package": package, "pulled": pulled}
+
+    @action("Capture the device logcat buffer.")
+    def logcat(
+        self, serial: str | None = None, lines: int = 500, clear: bool = False
+    ) -> dict[str, Any]:
+        adb = dev.adb_path()
+        serial = dev.resolve_serial(serial)
+        if clear:
+            run([adb, "-s", serial, "logcat", "-c"], check=False)
+            return {"cleared": True}
+        out = run([adb, "-s", serial, "logcat", "-d", "-t", str(lines)], check=False, timeout=60)
+        return {"lines": out.stdout.splitlines()}
+
+    @action("Dump device runtime state via dumpsys (optionally one service).")
+    def dumpsys(self, service: str | None = None, serial: str | None = None) -> dict[str, Any]:
+        serial = dev.resolve_serial(serial)
+        cmd = ["dumpsys"] + ([service] if service else [])
+        out = dev.shell(cmd, serial=serial, timeout=120)
+        return {"service": service or "all", "output": out[:200000]}
+
+    @action("Take a device screenshot and save it to the workspace.")
+    def screenshot(self, serial: str | None = None, out_path: str | None = None) -> dict[str, Any]:
+        adb = dev.adb_path()
+        serial = dev.resolve_serial(serial)
+        target = (
+            Path(out_path).expanduser()
+            if out_path
+            else self.config.workspace / "screenshots" / f"{serial}-{int(time.time())}.png"
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        proc = subprocess.run(  # noqa: S603
+            [adb, "-s", serial, "exec-out", "screencap", "-p"],
+            capture_output=True, timeout=30, check=False,
+        )
+        if proc.returncode != 0 or not proc.stdout:
+            err = proc.stderr.decode(errors="replace")[:200]
+            raise EngineError("dast", f"screencap failed: {err}")
+        target.write_bytes(proc.stdout)
+        return {"screenshot": str(target)}
+
+    @action("Start an activity (component) on the device.", mutating=True)
+    def start_activity(
+        self, package: str, activity: str, serial: str | None = None
+    ) -> dict[str, Any]:
+        serial = dev.resolve_serial(serial)
+        comp = activity if "/" in activity else f"{package}/{activity}"
+        out = dev.shell(["am", "start", "-n", comp], serial=serial)
+        return {"component": comp, "output": out.strip()}
+
+    @action("Activity tester: launch each activity and screenshot it.", mutating=True)
+    def activity_tester(
+        self, package: str, activities: list[str], serial: str | None = None
+    ) -> dict[str, Any]:
+        """Launch each activity in ``activities`` and capture a screenshot.
+
+        Pass the exported/browsable activities from a static scan
+        (``sast report`` -> ``exported_activities``).
+        """
+        serial = dev.resolve_serial(serial)
+        results = []
+        for act in activities:
+            comp = act if "/" in act else f"{package}/{act}"
+            try:
+                dev.shell(["am", "start", "-n", comp], serial=serial)
+                time.sleep(1.5)
+                shot = self.screenshot(serial=serial)
+                results.append({"activity": comp, "screenshot": shot["screenshot"]})
+            except Exception as exc:
+                results.append({"activity": comp, "error": str(exc)})
+        return {"package": package, "tested": results}
+
+    @action("Send a deeplink/URI intent to the device.", mutating=True)
+    def deeplink(self, uri: str, serial: str | None = None) -> dict[str, Any]:
+        serial = dev.resolve_serial(serial)
+        out = dev.shell(
+            ["am", "start", "-W", "-a", "android.intent.action.VIEW", "-d", uri],
+            serial=serial,
+        )
+        return {"uri": uri, "output": out.strip()}

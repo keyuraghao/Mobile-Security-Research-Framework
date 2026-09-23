@@ -69,6 +69,24 @@ class HooksEngine(Engine):
             ]
         }
 
+    @action("List MobSF's bundled Frida script library (Android + iOS, ~118 scripts).")
+    def mobsf_scripts(self, platform: str | None = None) -> dict[str, Any]:
+        """List every MobSF-bundled Frida script (by ``<platform>/<category>/<name>``).
+
+        Args:
+            platform: Optional filter, ``android`` or ``ios``.
+        """
+        from .. import mobsf_scripts as ms
+
+        scripts = ms.list_scripts(platform)
+        return {"count": len(scripts), "scripts": scripts}
+
+    @action("Show the source of a MobSF Frida script by its id.")
+    def mobsf_script_source(self, script_id: str) -> dict[str, Any]:
+        from .. import mobsf_scripts as ms
+
+        return {"id": script_id, "script": ms.read_script(script_id)}
+
     # -- generation -------------------------------------------------------
 
     @action("Render a Frida payload from a template; optionally save it to disk.")
@@ -132,6 +150,7 @@ class HooksEngine(Engine):
         self,
         template: str | None = None,
         script_path: str | None = None,
+        mobsf_script: str | None = None,
         params: dict[str, str] | None = None,
         package: str = DEFAULT_DUMMY_PACKAGE,
         device_id: str | None = None,
@@ -158,10 +177,16 @@ class HooksEngine(Engine):
             When ``device_id`` is ``"sim"`` the built-in simulator runs the
             payload in-process (no frida, no device required).
         """
-        if not template and not script_path:
-            raise EngineError("hooks", "Provide either 'template' or 'script_path'.")
+        if not template and not script_path and not mobsf_script:
+            raise EngineError(
+                "hooks", "Provide 'template', 'script_path', or 'mobsf_script'."
+            )
 
-        if script_path:
+        if mobsf_script:
+            from .. import mobsf_scripts
+
+            source = mobsf_scripts.read_script(mobsf_script)
+        elif script_path:
             source = Path(script_path).expanduser().read_text(encoding="utf-8")
         else:
             source = self.generate(template, params=params)["script"]  # type: ignore[arg-type]
@@ -196,9 +221,13 @@ class HooksEngine(Engine):
         errors: list[dict[str, Any]] = []
 
         def on_message(message: dict[str, Any], data: Any) -> None:
-            if message.get("type") == "send":
+            mtype = message.get("type")
+            if mtype == "send":
                 messages.append(message.get("payload"))
-            elif message.get("type") == "error":
+            elif mtype == "log":
+                # Many MobSF scripts report via console.log.
+                messages.append(message.get("payload"))
+            elif mtype == "error":
                 errors.append(message)
 
         pid = None
@@ -236,7 +265,7 @@ class HooksEngine(Engine):
 
         return {
             "package": package,
-            "template": template,
+            "template": template or mobsf_script,
             "loaded": loaded,
             "message_count": len(messages),
             "messages": messages,

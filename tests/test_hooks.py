@@ -50,3 +50,19 @@ def test_generate_unknown_template(engine):
 def test_test_requires_target(engine):
     with pytest.raises(EngineError):
         engine.test()  # neither template nor script_path
+
+
+def test_mobsf_script_library(engine):
+    res = engine.mobsf_scripts()
+    assert res["count"] > 100  # MobSF ships ~118 scripts
+    ids = {s["id"] for s in res["scripts"]}
+    assert any(i.startswith("ios/") for i in ids)  # iOS scripts included
+    assert any(i.startswith("android/") for i in ids)
+
+
+def test_mobsf_script_source_and_traversal(engine):
+    import pytest as _pt
+    src = engine.mobsf_script_source("android/default/ssl_pinning_bypass")["script"]
+    assert "Java" in src or "console" in src or "send" in src
+    with _pt.raises(Exception):
+        engine.mobsf_script_source("../../../../etc/passwd")
