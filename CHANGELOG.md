@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-09-22
+
+### Fixed
+- Emulator `setup` now resolves an actually-available system image for the chosen API level (with type/ABI fallbacks) instead of failing on non-existent combos (e.g. API 7 has no x86_64 image); a new **List images** action/button shows what's installable. Clear error naming the API levels that do have images.
+
 ### Added
 - **Full MobSF Frida script library** exposed through the hooks engine
   (`hooks.mobsf_scripts` / `mobsf_script_source`, and `hooks.test --mobsf-script`):
@@ -116,7 +121,8 @@ Initial public release.
 - **Cross-platform** throughout: tool discovery via `PATH`, no hardcoded paths,
   `platformdirs` workspace, shell-free subprocess execution.
 
-[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.2
 [0.3.1]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.1
 [0.3.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.0
 [0.2.0]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.2.0

@@ -53,6 +53,7 @@ class EmulatorEngine(Engine):
     def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.cfg = config.emulator
+        self._resolved_image: str | None = None
 
     # -- SDK discovery ---------------------------------------------------
 
@@ -91,6 +92,8 @@ class EmulatorEngine(Engine):
         return self._tool("adb", "platform-tools")
 
     def _image_pkg(self) -> str:
+        if self._resolved_image:
+            return self._resolved_image
         return f"system-images;android-{self.cfg.api_level};{self.cfg.image_type};{self.cfg.abi}"
 
     # -- status ----------------------------------------------------------
@@ -146,20 +149,68 @@ class EmulatorEngine(Engine):
         avdmanager = self._avdmanager()
         if not avdmanager:
             raise EngineError("emulator", "avdmanager not found after installing cmdline-tools.")
-        image = self._image_pkg()
         env = {"ANDROID_SDK_ROOT": str(self._sdk_root())}
-        # Accept licenses then install packages.
-        run([sdkmanager, "--licenses"], input_text="y\n" * 20, env=env, check=False, timeout=600)
-        for pkg in ("platform-tools", "emulator", image):
+        # Accept licenses then install core packages.
+        run([sdkmanager, "--licenses"], input_text="y\n" * 30, env=env, check=False, timeout=600)
+        for pkg in ("platform-tools", "emulator"):
             self.log.info("Installing SDK package %s", pkg)
             run([sdkmanager, pkg], env=env, check=True, timeout=3600)
-        if not self._avd_exists():
-            run(
-                [avdmanager, "create", "avd", "-n", self.cfg.avd_name,
-                 "-k", image, "--device", "pixel_5", "--force"],
-                input_text="no\n", env=env, check=True, timeout=300,
-            )
+        # Resolve a system image that actually exists for the chosen API level.
+        available = self._available_system_images(sdkmanager, env)
+        image = self._resolve_image(available)
+        self._resolved_image = image
+        self.log.info("Installing system image %s", image)
+        run([sdkmanager, image], env=env, check=True, timeout=3600)
+        # (Re)create the AVD against the resolved image.
+        run(
+            [avdmanager, "create", "avd", "-n", self.cfg.avd_name,
+             "-k", image, "--device", "pixel_5", "--force"],
+            input_text="no\n", env=env, check=True, timeout=300,
+        )
         return {"created": True, "avd": self.cfg.avd_name, "image": image}
+
+    def _available_system_images(self, sdkmanager: str, env: dict[str, str]) -> set[str]:
+        out = run([sdkmanager, "--list"], env=env, check=False, timeout=600)
+        images: set[str] = set()
+        for line in (out.stdout + out.stderr).splitlines():
+            tok = line.strip().split("|")[0].strip()
+            if tok.startswith("system-images;"):
+                images.add(tok)
+        return images
+
+    def _resolve_image(self, available: set[str]) -> str:
+        api = self.cfg.api_level
+        want = self._image_pkg()
+        if want in available:
+            return want
+        types = [self.cfg.image_type, "google_apis", "google_apis_playstore",
+                 "default", "aosp_atd", "google_atd"]
+        abis = [self.cfg.abi, "x86_64", "x86", "arm64-v8a"]
+        for t in dict.fromkeys(types):
+            for a in dict.fromkeys(abis):
+                cand = f"system-images;android-{api};{t};{a}"
+                if cand in available:
+                    return cand
+        options = sorted(i for i in available if f"android-{api};" in i)
+        if options:
+            return options[0]
+        # Nothing for this API: report what IS available near it.
+        near = sorted({i.split(";")[1] for i in available})
+        raise EngineError(
+            "emulator",
+            f"No system image exists for API {api}. Available API levels with "
+            f"images: {', '.join(a.replace('android-', '') for a in near)}. "
+            "Pick one of those (x86_64 images generally start around API 21).",
+        )
+
+    @action("List Android system images available to install (optionally for one API).")
+    def list_images(self, api_level: int | None = None) -> dict[str, Any]:
+        sdkmanager = self._ensure_cmdline_tools()
+        env = {"ANDROID_SDK_ROOT": str(self._sdk_root())}
+        images = sorted(self._available_system_images(sdkmanager, env))
+        if api_level is not None:
+            images = [i for i in images if f"android-{api_level};" in i]
+        return {"count": len(images), "images": images}
 
     @action("Boot the emulator and wait for Android to come up.", background=True, mutating=True)
     def start(self) -> dict[str, Any]:

@@ -89,6 +89,7 @@ class EmulatorView(QWidget):
 
         actions = QHBoxLayout()
         for label, slot in (
+            ("List images", self._list_images),
             ("Setup", self._setup),
             ("Start", self._start),
             ("Stop", self._stop),
@@ -169,6 +170,10 @@ class EmulatorView(QWidget):
 
     def _status(self) -> None:
         self._run("status")
+
+    def _list_images(self) -> None:
+        self._apply_cfg()
+        self._run("list_images", api_level=int(self.api.currentText()))
 
     def _provision(self) -> None:
         mods = [n for n, cb in self._module_boxes.items() if cb.isChecked()]
