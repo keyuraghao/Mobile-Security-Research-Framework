@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from mobiot.config import load_config
-from mobiot.engines.hooks import HooksEngine
-from mobiot.engines.sim import SimEngine
-from mobiot.sim import FridaScriptSimulator, SimDevice
+from msrf.config import load_config
+from msrf.engines.hooks import HooksEngine
+from msrf.engines.sim import SimEngine
+from msrf.sim import FridaScriptSimulator, SimDevice
 
 
 @pytest.fixture()

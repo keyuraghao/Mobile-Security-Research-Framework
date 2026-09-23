@@ -4,7 +4,7 @@ import json
 
 from typer.testing import CliRunner
 
-from mobiot.cli import app
+from msrf.cli import app
 
 runner = CliRunner()
 
@@ -12,7 +12,7 @@ runner = CliRunner()
 def test_version():
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
-    assert "mobiot" in result.stdout
+    assert "msrf" in result.stdout
 
 
 def test_info_lists_engines():

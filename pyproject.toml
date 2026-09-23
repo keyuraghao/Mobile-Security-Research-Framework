@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mobiot"
-version = "0.3.3"
+name = "msrf"
+version = "0.3.4"
 description = "Unified, cross-platform Mobile & IoT SAST/DAST/pentest toolkit with a CLI and MCP server."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -59,20 +59,20 @@ Repository = "https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest"
 Issues = "https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/issues"
 
 [project.scripts]
-mobiot = "mobiot.cli:run"
-mobiot-mcp = "mobiot.mcp_server:main"
+msrf = "msrf.cli:run"
+msrf-mcp = "msrf.mcp_server:main"
 
 [project.gui-scripts]
-mobiot-gui = "mobiot.gui:run"
+msrf-gui = "msrf.gui:run"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mobiot"]
-# Package data (Frida templates, manifest) lives under src/mobiot/data and is
+packages = ["src/msrf"]
+# Package data (Frida templates, manifest) lives under src/msrf/data and is
 # included automatically as part of the package.
-artifacts = ["src/mobiot/data/**/*"]
+artifacts = ["src/msrf/data/**/*"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/mobiot", "tests", "README.md", "CHANGELOG.md", "LICENSE"]
+include = ["src/msrf", "tests", "README.md", "CHANGELOG.md", "LICENSE"]
 
 [tool.ruff]
 line-length = 100
@@ -91,11 +91,11 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S", "B"]
-"src/mobiot/cli.py" = ["B008"]  # typer.Option/Argument defaults are the Typer idiom
-"src/mobiot/gui/*" = ["E501", "SIM118"]  # long QSS/HTML/lambda lines; Qt .keys() is not a dict
-"src/mobiot/report_format.py" = ["E501"]  # descriptive display strings
-"src/mobiot/reporting.py" = ["E501"]  # long HTML/report template strings
-"src/mobiot/engines/emulator.py" = ["E501"]  # long download/tool URLs
+"src/msrf/cli.py" = ["B008"]  # typer.Option/Argument defaults are the Typer idiom
+"src/msrf/gui/*" = ["E501", "SIM118"]  # long QSS/HTML/lambda lines; Qt .keys() is not a dict
+"src/msrf/report_format.py" = ["E501"]  # descriptive display strings
+"src/msrf/reporting.py" = ["E501"]  # long HTML/report template strings
+"src/msrf/engines/emulator.py" = ["E501"]  # long download/tool URLs
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -103,5 +103,5 @@ addopts = "-ra"
 
 [tool.mypy]
 python_version = "3.12"
-packages = ["mobiot"]
+packages = ["msrf"]
 ignore_missing_imports = true

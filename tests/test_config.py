@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from mobiot.config import load_config
-from mobiot.exceptions import ConfigurationError
+from msrf.config import load_config
+from msrf.exceptions import ConfigurationError
 
 
 def test_defaults(tmp_path, monkeypatch):
-    monkeypatch.delenv("MOBIOT_CONFIG", raising=False)
+    monkeypatch.delenv("MSRF_CONFIG", raising=False)
     cfg = load_config(workspace=tmp_path)
     assert cfg.workspace == tmp_path
     assert cfg.mobsf.port == 8000

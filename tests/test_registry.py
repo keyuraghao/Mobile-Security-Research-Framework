@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from mobiot.config import load_config
-from mobiot.engines.base import Engine
-from mobiot.exceptions import ConfigurationError
-from mobiot.registry import all_engines, engine_names, get_engine
+from msrf.config import load_config
+from msrf.engines.base import Engine
+from msrf.exceptions import ConfigurationError
+from msrf.registry import all_engines, engine_names, get_engine
 
 EXPECTED = {"sast", "dast", "hooks", "runtime", "proxy", "network", "iot", "sim"}
 

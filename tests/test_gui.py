@@ -10,8 +10,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PyQt6.QtWidgets import QApplication  # noqa: E402
 
-from mobiot.config import load_config  # noqa: E402
-from mobiot.gui.main import MainWindow  # noqa: E402
+from msrf.config import load_config  # noqa: E402
+from msrf.gui.main import MainWindow  # noqa: E402
 
 # Keep windows alive for the whole module: a window that is garbage-collected
 # while its worker threads are still running crashes Qt when the result signal

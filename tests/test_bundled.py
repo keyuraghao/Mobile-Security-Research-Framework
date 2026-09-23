@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from mobiot import bundled
-from mobiot.config import load_config
+from msrf import bundled
+from msrf.config import load_config
 
 
 def test_no_vendor_is_noop(tmp_path, monkeypatch):
-    monkeypatch.delenv("MOBIOT_VENDOR_DIR", raising=False)
+    monkeypatch.delenv("MSRF_VENDOR_DIR", raising=False)
     cfg = load_config(workspace=tmp_path)
     report = bundled.activate(cfg)
     # Not frozen and no vendor dir -> nothing bundled, no error.
@@ -20,7 +20,7 @@ def test_vendor_dir_detected_and_wired(tmp_path, monkeypatch):
     jadx.write_text("#!/bin/sh\n")
     jadx.chmod(0o755)
     (vendor / "frida-server").mkdir(parents=True)
-    monkeypatch.setenv("MOBIOT_VENDOR_DIR", str(vendor))
+    monkeypatch.setenv("MSRF_VENDOR_DIR", str(vendor))
 
     cfg = load_config(workspace=tmp_path)
     report = bundled.activate(cfg)

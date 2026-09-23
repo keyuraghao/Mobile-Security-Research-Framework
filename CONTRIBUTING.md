@@ -1,6 +1,6 @@
-# Contributing to mobiot
+# Contributing to msrf
 
-Thanks for your interest in improving mobiot.
+Thanks for your interest in improving msrf.
 
 ## Development setup
 
@@ -24,7 +24,7 @@ QT_QPA_PLATFORM=offscreen pytest -q
 
 ## Releases
 
-Bump `__version__` (`src/mobiot/__init__.py`) and `version` (`pyproject.toml`),
+Bump `__version__` (`src/msrf/__init__.py`) and `version` (`pyproject.toml`),
 add a `## [x.y.z]` CHANGELOG section, then tag `vx.y.z`. CI builds the per-OS
 bundles + Windows installer, attaches `.sha256` checksums, and fills the release
 notes from the CHANGELOG.

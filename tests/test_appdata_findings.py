@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from mobiot.config import load_config
-from mobiot.engines.appdata import AppDataEngine
-from mobiot.engines.findings import FindingsEngine
-from mobiot.reporting import FORMATS
+from msrf.config import load_config
+from msrf.engines.appdata import AppDataEngine
+from msrf.engines.findings import FindingsEngine
+from msrf.reporting import FORMATS
 
 
 @pytest.fixture()

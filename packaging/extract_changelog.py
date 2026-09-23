@@ -47,7 +47,7 @@ def main() -> int:
         "Self-contained Mobile & IoT SAST / DAST / pentest toolkit "
         "(desktop app + CLI + MCP server).\n\n"
         "### Download\n\n"
-        "Grab the file for your OS below, unzip and run `mobiot` — nothing else to install. "
+        "Grab the file for your OS below, unzip and run `msrf` — nothing else to install. "
         "Each asset has a matching `.sha256` for verification.\n\n"
     )
     print(header + body)

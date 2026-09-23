@@ -16,7 +16,7 @@ htmlcov/
 venv/
 env/
 
-# mobiot workspace / runtime artefacts
+# msrf workspace / runtime artefacts
 *.flows
 *.pcap
 *.log

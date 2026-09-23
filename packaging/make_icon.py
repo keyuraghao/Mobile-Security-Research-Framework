@@ -3,7 +3,7 @@
 
 Renders the SVG with Qt (offscreen) at 256x256, then writes a multi-size .ico
 (for the Windows exe/installer) and a .png (for Linux .desktop / macOS iconset)
-next to it under src/mobiot/data/.
+next to it under src/msrf/data/.
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-DATA = Path(__file__).resolve().parent.parent / "src" / "mobiot" / "data"
+DATA = Path(__file__).resolve().parent.parent / "src" / "msrf" / "data"
 
 
 def render_png(svg: bytes, size: int) -> bytes:

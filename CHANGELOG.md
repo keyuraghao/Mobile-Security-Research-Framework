@@ -1,10 +1,20 @@
 # Changelog
 
-All notable changes to **mobiot** are documented here. The format follows
+All notable changes to **msrf** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.3.4] - 2026-09-22
+
+### Changed
+- **Renamed the package, command and pip distribution from `mobiot` to `msrf`**
+  to match the product name (Mobile Security and Research Framework). The CLI/MCP
+  command is now `msrf` (with `msrf-mcp` and `msrf-gui`), the Python package is
+  `msrf`, the pip distribution and wheel are `msrf-<version>`, environment
+  variables use the `MSRF_` prefix, and MCP tools are `msrf_*`. Release titles and
+  all downloadable app files already use the product name / `MSRF-*`.
 
 ## [0.3.3] - 2026-09-22
 
@@ -22,7 +32,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - **Renamed to "Mobile Security and Research Framework"** across the desktop app
   (window title, About dialog, display name), Help tab, installer and README. The
-  package, CLI command and MCP server name remain `mobiot` for compatibility.
+  package, CLI command and MCP server name remain `msrf` for compatibility.
 
 ## [0.3.2] - 2026-09-22
 
@@ -45,7 +55,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (Info.plist, ATS, Mach-O, dylib/framework, App Store).
 
 ### Notes
-- SAST already runs *every* MobSF analyzer for APK/IPA (mobiot calls MobSF's
+- SAST already runs *every* MobSF analyzer for APK/IPA (msrf calls MobSF's
   `apk_analysis_task`/`ipa_analysis_task` directly). Remaining coverage items are
   specialised: source-zip / `.aab` / `.appx` / `.so` inputs (same analyzers,
   different container), a native TLS-tester harness, Frida-gadget APK patching for
@@ -85,11 +95,11 @@ Fully self-contained desktop app: download one file per OS, run it, nothing else
 
 ### Added
 - **Standalone per-OS bundles.** The release ships a self-contained app for Linux, Windows and macOS that bundles MobSF, a JRE, jadx, adb, frida-server, Frida, mitmproxy and objection. No install, no downloads, no login. The one executable is also the CLI and MCP server (run with arguments).
-- **Direct in-process MobSF analysis.** Static analysis calls MobSF's analyzer facade directly (`mobsf_direct.py`), returning the raw result which is rendered through mobiot's own UI and output. No MobSF server, REST, templates or login.
+- **Direct in-process MobSF analysis.** Static analysis calls MobSF's analyzer facade directly (`mobsf_direct.py`), returning the raw result which is rendered through msrf's own UI and output. No MobSF server, REST, templates or login.
 - **20+ inbuilt Frida hooks** across bypass/monitor/recon/trace categories, run with one click or one command.
 - **Built-in device/Frida simulator** (`sim` engine) to generate and test payloads with nothing attached.
-- **MCP full self-introspection**: `mobiot_capabilities` and `mobiot_workspace`, plus bundled-tool activation so the MCP server has the same self-contained capability as the GUI/CLI.
-- **PyQt6 desktop GUI** (`mobiot ui`).
+- **MCP full self-introspection**: `msrf_capabilities` and `msrf_workspace`, plus bundled-tool activation so the MCP server has the same self-contained capability as the GUI/CLI.
+- **PyQt6 desktop GUI** (`msrf ui`).
 - **On-demand and bundled tool provisioning** (`provisioning.py`, `bundled.py`, `packaging/fetch_vendor.py`).
 
 ### Changed
@@ -125,12 +135,12 @@ Initial public release.
 - **`sim` engine** — a built-in, dependency-free DIVA-like device + Frida-script
   simulator so payloads and the dynamic workflow can be generated, validated and
   "run" with nothing external attached.
-- **Desktop application** (`mobiot ui`, PyQt6) — a cross-platform tabbed control
+- **Desktop application** (`msrf ui`, PyQt6) — a cross-platform tabbed control
   centre (Dashboard, Static, Frida Hooks, Dynamic, Proxy, Network, IoT) with all
   engine calls on worker threads.
-- **CLI** (`mobiot`) auto-generated from the registry (`info`, `preflight`,
+- **CLI** (`msrf`) auto-generated from the registry (`info`, `preflight`,
   `version`, `serve`, `ui`, and every engine action).
-- **MCP server** (`mobiot-mcp` / `mobiot serve`) exposing every action as a tool
+- **MCP server** (`msrf-mcp` / `msrf serve`) exposing every action as a tool
   over stdio or HTTP.
 - **MobSF slim/offline profile** (on by default) — deterministic `MOBSF_SECRET_KEY`
   (skips the first-run block that downloads ~104MB JADX and can hang), system

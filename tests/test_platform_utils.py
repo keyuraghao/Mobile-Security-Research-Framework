@@ -4,8 +4,8 @@ import sys
 
 import pytest
 
-from mobiot import platform_utils as pu
-from mobiot.exceptions import CommandError, ToolNotFoundError
+from msrf import platform_utils as pu
+from msrf.exceptions import CommandError, ToolNotFoundError
 
 
 def test_normalized_arch_returns_stable_token():

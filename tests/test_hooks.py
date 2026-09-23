@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from mobiot.config import load_config
-from mobiot.engines.hooks import HooksEngine
-from mobiot.exceptions import EngineError
-from mobiot.mobsf_scripts import scripts_dir
+from msrf.config import load_config
+from msrf.engines.hooks import HooksEngine
+from msrf.exceptions import EngineError
+from msrf.mobsf_scripts import scripts_dir
 
 # MobSF is an optional heavy backend; its Frida script library is only present
 # when the mobsf package is installed (e.g. the standalone bundle). Skip the

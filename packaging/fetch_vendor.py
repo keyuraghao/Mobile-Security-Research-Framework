@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download the native tools mobiot bundles into ``vendor/`` for the current OS.
+"""Download the native tools msrf bundles into ``vendor/`` for the current OS.
 
 Run before PyInstaller in the release build. Populates:
 
@@ -41,7 +41,7 @@ def _os() -> str:
 
 def _download(url: str) -> bytes:
     print(f"  GET {url}", flush=True)
-    req = urllib.request.Request(url, headers={"User-Agent": "mobiot-vendor"})
+    req = urllib.request.Request(url, headers={"User-Agent": "msrf-vendor"})
     with urllib.request.urlopen(req, timeout=300) as resp:
         return resp.read()
 
