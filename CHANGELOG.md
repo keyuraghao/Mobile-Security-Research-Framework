@@ -4,6 +4,17 @@ All notable changes to **msrf** are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-09-22
+
+### Fixed
+- Emulator launch now checks first whether the PC can run an emulator (hardware virtualization, via `emulator -accel-check`). If it cannot, it stops straight away with step-by-step instructions for Windows, Linux or macOS instead of trying to launch.
+- If the emulator closes right after starting, the app reports it at once with the reason from the log, instead of waiting up to 5 minutes.
+- The emulator is started with `-no-metrics` when supported, so its usage-metrics banner (announced to become a blocking prompt) can never stall the launch.
+- Boot checks talk to the emulator with `adb -e`, so a phone plugged in at the same time cannot confuse them.
+
+### Added
+- **Check PC support** button on the Emulator tab (and `emulator accel-check` on the CLI/MCP); Status now shows whether hardware acceleration is available.
+
 ## [0.3.6] - 2026-09-22
 
 ### Changed

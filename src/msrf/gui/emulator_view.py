@@ -41,6 +41,7 @@ _STEP_TITLES = {
     "start": "Launching emulator and waiting for Android to boot",
     "stop": "Stopping emulator",
     "status": "Checking status",
+    "accel_check": "Checking whether this PC can run the emulator",
     "list_images": "Listing available system images",
     "root": "Rooting with Magisk",
     "install_lsposed": "Installing LSPosed",
@@ -131,9 +132,13 @@ class EmulatorView(QWidget):
         stop.clicked.connect(lambda: self._run("stop"))
         status = QPushButton("Status")
         status.clicked.connect(lambda: self._run("status"))
+        check = QPushButton("Check PC support")
+        check.setToolTip("Check that hardware virtualization is available for the emulator")
+        check.clicked.connect(lambda: self._run("accel_check"))
         rlay.addWidget(launch)
         rlay.addWidget(stop)
         rlay.addWidget(status)
+        rlay.addWidget(check)
         rlay.addStretch(1)
         self._busy_buttons.append(launch)
         lay.addWidget(run_box)

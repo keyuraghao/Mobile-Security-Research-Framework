@@ -71,7 +71,10 @@ download automatically on first use (a few GB).</p>
 <ol>
   <li>Choose the <b>API level</b>, <b>image</b> and <b>ABI</b> (x86_64 is fastest), then
       click <b>Create device</b>. Only needed once per device.</li>
-  <li>Click <b>Launch emulator</b>. The emulator window opens and Android boots.</li>
+  <li>Click <b>Launch emulator</b>. The emulator window opens and Android boots. The app first
+      checks that this PC can run an emulator (hardware virtualization); if not, it stops at once
+      and shows the exact steps to enable it. <b>Check PC support</b> runs the same check on its
+      own.</li>
   <li>Watch the <b>Activity</b> box (what is running and for how long) and the
       <b>Live log</b> (every line each step writes). The log is also saved to
       <code>logs/emulator.log</code> in your workspace; use <b>Open log file</b> or

@@ -29,8 +29,8 @@ from pathlib import Path
 from typing import Any
 
 from ..config import Config
-from ..exceptions import EngineError
-from ..platform_utils import IS_WINDOWS, run, run_logged, spawn, which
+from ..exceptions import CommandError, EngineError
+from ..platform_utils import IS_WINDOWS, os_name, run, run_logged, spawn, which
 from ..registry import register
 from .base import Engine, action
 
@@ -160,8 +160,16 @@ class EmulatorEngine(Engine):
                 "running": running,
                 "rooted": rooted,
                 "system_image": self._image_pkg(),
+                "hardware_acceleration": self._accel_summary(),
             },
         }
+
+    def _accel_summary(self) -> str:
+        if not self._emulator():
+            return "unknown (emulator not installed yet)"
+        res = self.accel_check()
+        state = {True: "available", False: "NOT available", None: "unknown"}[res["usable"]]
+        return f"{state}: {res['detail']}"
 
     def _avd_exists(self) -> bool:
         emu = self._emulator()
@@ -271,18 +279,38 @@ class EmulatorEngine(Engine):
         if self.cfg.headless:
             # Opt-in: no on-screen window (e.g. CI / remote). Default is windowed.
             args += ["-no-window", "-no-audio"]
+        if self._supports_flag("-no-metrics"):
+            # Skip the usage-metrics banner (and the blocking prompt it announces).
+            args.append("-no-metrics")
+        # Fail fast, with a clear fix, when the PC cannot run an emulator at all.
+        accel = self.accel_check()
+        if accel["usable"] is False:
+            self._note("Cannot launch: hardware virtualization is not available. " + accel["detail"])
+            self._note(accel["how_to_fix"])
+            raise EngineError("emulator", accel["how_to_fix"])
         log = self.live_log_path
         self._note("=== Launching emulator: " + " ".join(str(a) for a in args) + " ===")
-        spawn(args, stdout=log)
-        # Wait for boot, reporting progress so a slow/stuck boot is visible.
-        self._note("Waiting for the device to appear (adb wait-for-device)")
-        run([adb, "wait-for-device"], check=False, timeout=self.cfg.boot_timeout)
+        proc = spawn(args, stdout=log)
+        # Wait for boot, reporting progress, and stop at once if the emulator dies.
+        self._note("Waiting for Android to boot (the emulator window should appear)")
         started = time.time()
         deadline = started + self.cfg.boot_timeout
         last_note = started
         while time.time() < deadline:
-            done = run([adb, "shell", "getprop", "sys.boot_completed"], check=False)
-            if done.stdout.strip() == "1":
+            code = proc.poll() if proc is not None else None
+            if code is not None:
+                reason = self._explain_exit(log)
+                self._note(f"Emulator closed right after starting (exit code {code}). {reason}")
+                raise EngineError("emulator", f"The emulator closed right after starting. {reason} "
+                                  f"Full log: {log}")
+            try:
+                # -e: talk to the emulator even if a phone is also plugged in.
+                done = run([adb, "-e", "shell", "getprop", "sys.boot_completed"],
+                           check=False, timeout=15)
+                booted = done.stdout.strip() == "1"
+            except CommandError:
+                booted = False
+            if booted:
                 self._note(f"Android booted in {int(time.time() - started)}s")
                 return {"started": True, "avd": self.cfg.avd_name, "log": str(log)}
             if time.time() - last_note >= 15:
@@ -292,6 +320,51 @@ class EmulatorEngine(Engine):
         self._note(f"Boot timed out after {int(self.cfg.boot_timeout)}s")
         raise EngineError("emulator", f"Emulator did not finish booting in {self.cfg.boot_timeout}s. "
                           f"See the log: {log}")
+
+    # -- hardware acceleration / launch diagnostics ---------------------
+
+    @action("Check whether this computer can run the emulator (hardware virtualization).")
+    def accel_check(self) -> dict[str, Any]:
+        emu = self._emulator()
+        if not emu:
+            raise EngineError("emulator", "The emulator is not installed yet; click Create device first.")
+        try:
+            out = run([emu, "-accel-check"], check=False, timeout=60)
+            usable, detail = _parse_accel_check(out.stdout + out.stderr)
+        except CommandError as exc:
+            usable, detail = None, f"accel-check did not answer: {exc}"
+        result: dict[str, Any] = {"usable": usable, "detail": detail}
+        if usable is False:
+            result["how_to_fix"] = _accel_help()
+        return result
+
+    def _supports_flag(self, flag: str) -> bool:
+        """True if this emulator build lists ``flag`` in its help (cached)."""
+        if not hasattr(self, "_emu_help"):
+            emu = self._emulator()
+            try:
+                out = run([emu, "-help"], check=False, timeout=30) if emu else None
+                self._emu_help = (out.stdout + out.stderr) if out else ""
+            except CommandError:
+                self._emu_help = ""
+        return flag in self._emu_help
+
+    def _explain_exit(self, log: Path) -> str:
+        """Turn the emulator's last log lines into a plain-language reason."""
+        try:
+            tail = "\n".join(log.read_text(encoding="utf-8", errors="replace").splitlines()[-80:])
+        except OSError:
+            tail = ""
+        low = tail.lower()
+        if "requires hardware acceleration" in low or "virtualization extension" in low:
+            return _accel_help()
+        if "running multiple emulators with the same avd" in low or "another emulator instance" in low:
+            return "This virtual device is already running. Click Stop, then Launch again."
+        if "not enough space" in low or "no space left" in low:
+            return "There is not enough free disk space for the emulator. Free some space and try again."
+        if "unknown option" in low:
+            return "This emulator version rejected a launch option; update it with Create device."
+        return "The reason is in the last lines of the live log above."
 
     @action("Stop the running emulator.", mutating=True)
     def stop(self) -> dict[str, Any]:
@@ -556,3 +629,44 @@ class EmulatorEngine(Engine):
         if not found:
             raise EngineError("emulator", "Installed command-line tools but sdkmanager still not found.")
         return found
+
+
+def _parse_accel_check(text: str) -> tuple[bool | None, str]:
+    """Parse ``emulator -accel-check`` output: ``accel:`` / code / message / ``accel``."""
+    lines = [ln.strip() for ln in text.splitlines()]
+    try:
+        i = lines.index("accel:")
+        code = int(lines[i + 1])
+    except (ValueError, IndexError):
+        return None, text.strip()[:300]
+    msg = []
+    for ln in lines[i + 2:]:
+        if ln == "accel":
+            break
+        if ln:
+            msg.append(ln)
+    return code == 0, " ".join(msg)
+
+
+def _accel_help() -> str:
+    """Plain-language steps to enable hardware virtualization on this OS."""
+    head = ("This computer cannot run the Android emulator yet because hardware "
+            "virtualization is not available to it. ")
+    plat = os_name()
+    if plat == "windows":
+        steps = ("To fix it: 1) If this Windows is itself a virtual machine (VMware, VirtualBox, "
+                 "Hyper-V, Parallels or a cloud VM), turn on nested virtualization for it in the "
+                 "host's VM settings. 2) Otherwise, enable Intel VT-x or AMD-V (SVM) in the BIOS/UEFI "
+                 "setup. 3) In Windows, open 'Turn Windows features on or off', tick 'Windows "
+                 "Hypervisor Platform', and restart. Task Manager > Performance > CPU should then "
+                 "show 'Virtualization: Enabled'. Then click Launch emulator again.")
+    elif plat == "linux":
+        steps = ("To fix it: enable Intel VT-x or AMD-V in the BIOS/UEFI (or nested virtualization "
+                 "if this Linux is a VM), install KVM (for example 'sudo apt install qemu-kvm'), "
+                 "add your user to the 'kvm' group, log out and back in, and check that /dev/kvm "
+                 "exists. Then click Launch emulator again.")
+    else:
+        steps = ("To fix it: on an Apple Silicon Mac choose the arm64-v8a ABI and create the device "
+                 "again; on an Intel Mac make sure it is not a virtual machine without nested "
+                 "virtualization. Then click Launch emulator again.")
+    return head + steps

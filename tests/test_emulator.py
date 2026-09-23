@@ -150,3 +150,102 @@ def test_provision_stops_before_restart(monkeypatch, engine):
     # Never two emulators: a stop sits between the two starts.
     assert calls == ["setup", "start(ws=True)", "root", "stop", "start(ws=True)",
                      "lsposed", "modules", "checker"]
+
+
+# -- hardware acceleration / fail-fast launch ------------------------------
+
+_ACCEL_OK = "accel:\n0\nWHPX(10.0.19045) is installed and usable.\naccel\n"
+_ACCEL_BAD = ("accel:\n1\nAndroid Emulator requires an Intel/AMD processor with virtualization "
+              "extension support.  (Virtualization extension is not supported)\naccel\n")
+# Tail of a real Windows log where the PC had no virtualization.
+_REAL_WINDOWS_FAILURE = (
+    "INFO         |   Checking: hasCompatibleHypervisor\n"
+    "INFO         |      Ok: Hypervisor compatibility to run avd: `msrf` are met\n"
+    "WARNING      | encryption is off\n"
+    "ERROR        | x86 emulation currently requires hardware acceleration!\n"
+    "CPU acceleration status: Android Emulator requires an Intel/AMD processor with "
+    "virtualization extension support.  (Virtualization extension is not supported)\n"
+)
+
+
+class _Proc:
+    def __init__(self, code=None):
+        self.code = code
+
+    def poll(self):
+        return self.code
+
+
+def _stub_launch(monkeypatch, engine, accel=_ACCEL_OK, help_text="-no-metrics", proc=None,
+                 on_spawn=None):
+    launched: list[list[str]] = []
+    monkeypatch.setattr(engine, "_emulator", lambda: "emulator")
+    monkeypatch.setattr(engine, "_adb", lambda: "adb")
+    monkeypatch.setattr(engine, "_avd_exists", lambda: True)
+
+    def fake_spawn(args, stdout=None):
+        launched.append(args)
+        if on_spawn:
+            on_spawn(stdout)
+        return proc or _Proc()
+
+    def fake_run(cmd, **kw):
+        if "-accel-check" in cmd:
+            out = accel
+        elif "-help" in cmd:
+            out = help_text
+        elif "getprop" in cmd:
+            out = "1\n"
+        else:
+            out = ""
+        return SimpleNamespace(stdout=out, stderr="")
+
+    monkeypatch.setattr(emu_mod, "spawn", fake_spawn)
+    monkeypatch.setattr(emu_mod, "run", fake_run)
+    return launched
+
+
+def test_parse_accel_check():
+    ok, detail = emu_mod._parse_accel_check(_ACCEL_OK)
+    assert ok is True and detail == "WHPX(10.0.19045) is installed and usable."
+    ok, detail = emu_mod._parse_accel_check(_ACCEL_BAD)
+    assert ok is False and "not supported" in detail
+    assert emu_mod._parse_accel_check("garbage")[0] is None
+
+
+def test_launch_passes_no_metrics_when_supported(monkeypatch, engine):
+    launched = _stub_launch(monkeypatch, engine)
+    engine.start()
+    assert "-no-metrics" in launched[0]
+
+
+def test_launch_skips_no_metrics_on_old_emulator(monkeypatch, engine):
+    launched = _stub_launch(monkeypatch, engine, help_text="-avd <name>")
+    engine.start()
+    assert "-no-metrics" not in launched[0]
+
+
+def test_launch_refuses_without_virtualization(monkeypatch, engine):
+    launched = _stub_launch(monkeypatch, engine, accel=_ACCEL_BAD)
+    with pytest.raises(EngineError) as err:
+        engine.start()
+    assert launched == []                          # never started the emulator
+    assert "virtualization" in str(err.value).lower()
+    assert "fix it" in engine.log_tail()["tail"]
+
+
+def test_launch_fails_fast_when_emulator_exits(monkeypatch, engine):
+    import time
+
+    def write_failure(log):
+        log.write_text(_REAL_WINDOWS_FAILURE, encoding="utf-8")
+
+    # accel-check "unknown" (older emulator): launch proceeds, then the process dies.
+    _stub_launch(monkeypatch, engine, accel="", proc=_Proc(code=1), on_spawn=write_failure)
+    t0 = time.monotonic()
+    with pytest.raises(EngineError) as err:
+        engine.start()
+    assert time.monotonic() - t0 < 5               # no 5-minute wait
+    msg = str(err.value)
+    assert "closed right after starting" in msg
+    assert "virtualization" in msg.lower()
