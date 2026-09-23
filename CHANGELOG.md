@@ -6,6 +6,28 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Full MobSF Frida script library** exposed through the hooks engine
+  (`hooks.mobsf_scripts` / `mobsf_script_source`, and `hooks.test --mobsf-script`):
+  all ~118 MobSF-bundled scripts for Android and iOS (API monitor, SSL/root/
+  debugger/jailbreak bypasses, crypto & keychain dumps, activity/deeplink traces,
+  biometric bypass, and the whole `others/` library). The Dynamic (DAST) dropdown
+  now offers 150+ techniques.
+- **On-device DAST techniques (adb):** `dast.install_app`, `pull_apk`, `logcat`,
+  `dumpsys`, `screenshot`, `start_activity`, `activity_tester`, `deeplink` —
+  matching MobSF's device operations.
+- **Static-analysis rendering completeness:** dedicated GUI tables for every
+  analyzer that was previously Raw-JSON-only (APKID, behaviour, NIAP,
+  permission-mapping, SBOM; emails + firebase folded into URLs), plus an iOS tab
+  (Info.plist, ATS, Mach-O, dylib/framework, App Store).
+
+### Notes
+- SAST already runs *every* MobSF analyzer for APK/IPA (mobiot calls MobSF's
+  `apk_analysis_task`/`ipa_analysis_task` directly). Remaining coverage items are
+  specialised: source-zip / `.aab` / `.appx` / `.so` inputs (same analyzers,
+  different container), a native TLS-tester harness, Frida-gadget APK patching for
+  non-rooted, and the full iOS dynamic (Corellium/jailbroken-SSH) subsystem.
+
 ## [0.3.1] - 2026-09-22
 
 ### Added
