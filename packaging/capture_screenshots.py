@@ -142,11 +142,13 @@ def main() -> int:
     shot("05_sast_files.png")
 
     # Frida hook library: run the SSL-pinning bypass on the built-in simulator.
-    tab("Frida Hooks")
-    i = win.hook_combo.findData("ssl-pinning-bypass")
+    from msrf.gui.hooks_view import HooksView
+    hooks = win.tabs.widget(tab("Frida Hooks"))
+    assert isinstance(hooks, HooksView)
+    i = hooks.combo.findData("ssl-pinning-bypass")
     if i >= 0:
-        win.hook_combo.setCurrentIndex(i)
-    win._hook_run()
+        hooks.combo.setCurrentIndex(i)
+    hooks._lib_run()
     settle()
     shot("06_frida_hooks.png")
 

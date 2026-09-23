@@ -20,7 +20,6 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QDockWidget,
     QFileDialog,
-    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -47,6 +46,7 @@ from .emulator_screen import EmulatorScreen
 from .emulator_view import EmulatorView
 from .findings_view import FindingsView
 from .help_view import HelpView
+from .hooks_view import HooksView
 from .icon import app_icon
 from .sast_view import SASTView
 from .worker import Worker
@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
         self.findings_view = FindingsView(self)
         self.tabs.addTab(self._tab_dashboard(), "Dashboard")
         self.tabs.addTab(self.sast_view, "Static (SAST)")
-        self.tabs.addTab(self._tab_hooks(), "Frida Hooks")
+        self.tabs.addTab(HooksView(self), "Frida Hooks")
         self.tabs.addTab(DastView(self), "Dynamic (DAST)")
         self.tabs.addTab(EmulatorView(self), "Emulator")
         self.tabs.addTab(AppDataView(self), "App Data")
@@ -372,131 +372,6 @@ class MainWindow(QMainWindow):
             )
         self.dash_table.resizeColumnsToContents()
         self.dash_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-
-    # -- Frida hooks -----------------------------------------------------
-
-    def _tab_hooks(self) -> QWidget:
-        w = QWidget()
-        lay = QHBoxLayout(w)
-        left = QVBoxLayout()
-        left.addWidget(QLabel("<b>Inbuilt hook library</b>"))
-        self.hook_combo = QComboBox()
-        left.addWidget(self.hook_combo)
-        self.hook_summary = QLabel("")
-        self.hook_summary.setWordWrap(True)
-        left.addWidget(self.hook_summary)
-
-        box = QGroupBox("Parameters (custom-target hooks only)")
-        pf = QVBoxLayout(box)
-        self.hook_class = QLineEdit()
-        self.hook_class.setPlaceholderText("CLASS  e.g. jakhar.aseem.diva.APICreds")
-        self.hook_method = QLineEdit()
-        self.hook_method.setPlaceholderText("METHOD  e.g. access")
-        self.hook_filter = QLineEdit()
-        self.hook_filter.setPlaceholderText("FILTER  e.g. diva")
-        pf.addWidget(self.hook_class)
-        pf.addWidget(self.hook_method)
-        pf.addWidget(self.hook_filter)
-        left.addWidget(box)
-
-        dev = QHBoxLayout()
-        dev.addWidget(QLabel("Target:"))
-        self.hook_device = QComboBox()
-        self.hook_device.addItem("Simulator (no device needed)", "sim")
-        self.hook_device.addItem("USB device (real)", "usb")
-        dev.addWidget(self.hook_device, 1)
-        left.addLayout(dev)
-
-        btns = QHBoxLayout()
-        gen = _button("View script")
-        runb = _button("Run hook", primary=True)
-        btns.addWidget(gen)
-        btns.addWidget(runb)
-        left.addLayout(btns)
-        left.addStretch(1)
-
-        lw = QWidget()
-        lw.setLayout(left)
-        lw.setFixedWidth(370)
-        lay.addWidget(lw)
-        self.hook_output = OutputPane()
-        lay.addWidget(self.hook_output, 1)
-
-        self._hook_meta: dict[str, dict] = {}
-        self.hook_combo.currentIndexChanged.connect(self._hook_selected)
-        gen.clicked.connect(self._hook_view)
-        runb.clicked.connect(self._hook_run)
-        self._load_hooks()
-        return w
-
-    def _load_hooks(self) -> None:
-        def work():
-            return self.engine("hooks").list_templates()["templates"]
-
-        def done(tpls):
-            self.hook_combo.clear()
-            self._hook_meta.clear()
-            for t in sorted(tpls, key=lambda x: (x["category"], x["name"])):
-                self.hook_combo.addItem(f"[{t['category']}] {t['name']}", t["name"])
-                self._hook_meta[t["name"]] = t
-            self._hook_selected()
-
-        self.submit(work, on_result=done)
-
-    def _current_hook(self):
-        name = self.hook_combo.currentData()
-        return name, self._hook_meta.get(name, {})
-
-    def _hook_selected(self) -> None:
-        name, meta = self._current_hook()
-        if not meta:
-            return
-        self.hook_summary.setText(meta.get("summary", ""))
-        params = meta.get("params", {})
-        self.hook_class.setEnabled("CLASS" in params)
-        self.hook_method.setEnabled("METHOD" in params)
-        self.hook_filter.setEnabled("FILTER" in params)
-
-    def _hook_params(self, meta: dict):
-        params = meta.get("params", {})
-        out = {}
-        if "CLASS" in params and self.hook_class.text().strip():
-            out["CLASS"] = self.hook_class.text().strip()
-        if "METHOD" in params and self.hook_method.text().strip():
-            out["METHOD"] = self.hook_method.text().strip()
-        if "FILTER" in params and self.hook_filter.text().strip():
-            out["FILTER"] = self.hook_filter.text().strip()
-        return out or None
-
-    def _hook_view(self) -> None:
-        name, meta = self._current_hook()
-        params = self._hook_params(meta)
-        self.hook_output.rule(f"script: {name}")
-        self.submit(
-            lambda: self.engine("hooks").generate(name, params=params),
-            on_result=lambda d: self.hook_output.log(d["script"]),
-            on_error=lambda e: self.hook_output.log(f"error: {e}"),
-        )
-
-    def _hook_run(self) -> None:
-        name, meta = self._current_hook()
-        params = self._hook_params(meta)
-        dev = self.hook_device.currentData()
-        device_id = "sim" if dev == "sim" else None
-        self.hook_output.rule(f"run: {name} on {dev}")
-        self.submit(
-            lambda: self.engine("hooks").test(template=name, params=params, device_id=device_id),
-            on_result=self._hook_ran,
-            on_error=lambda e: self.hook_output.log(f"error: {e}"),
-        )
-
-    def _hook_ran(self, res: dict) -> None:
-        self.hook_output.log(f"loaded={res.get('loaded')}  messages={res.get('message_count')}")
-        for m in res.get("messages", []):
-            if isinstance(m, dict):
-                self.hook_output.log(f"  [{m.get('tag')}] {m.get('msg')}")
-            else:
-                self.hook_output.log(f"  {m}")
 
     # -- generic action tabs ---------------------------------------------
 

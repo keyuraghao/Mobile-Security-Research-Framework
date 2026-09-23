@@ -76,3 +76,51 @@ def test_mobsf_script_source_and_traversal(engine):
     assert "Java" in src or "console" in src or "send" in src
     with _pt.raises(Exception):
         engine.mobsf_script_source("../../../../etc/passwd")
+
+
+def test_save_script_anywhere(engine, tmp_path):
+    dest = tmp_path / "nested" / "my_hook"
+    res = engine.save_script("Java.perform(function(){ send('x'); });", str(dest))
+    from pathlib import Path
+    assert Path(res["path"]).is_file()
+    assert res["path"].endswith(".js")  # extension added when missing
+
+
+def test_save_script_rejects_empty(engine, tmp_path):
+    with pytest.raises(EngineError):
+        engine.save_script("   \n", str(tmp_path / "x.js"))
+
+
+def test_combine_multiple_methods_and_template(engine):
+    res = engine.combine([
+        {"class": "com.a.B", "method": "m1"},
+        {"class": "com.a.C", "method": "m2"},
+        {"template": "ssl-pinning-bypass"},
+    ])
+    assert res["count"] == 3
+    assert res["hooks"] == ["com.a.B.m1", "com.a.C.m2", "ssl-pinning-bypass"]
+    # One combined script hooking every target (each keeps its own Java.perform).
+    assert res["script"].count("Java.perform") >= 3
+    assert "com.a.B" in res["script"] and "com.a.C" in res["script"]
+
+
+def test_combine_raw_source_and_save(engine, tmp_path):
+    out = tmp_path / "combined.js"
+    res = engine.combine([{"source": "// raw\nJava.perform(function(){});", "label": "mine"}],
+                         out_path=str(out))
+    assert out.is_file()
+    assert "mine" in res["hooks"]
+
+
+def test_combine_rejects_empty_and_bad_spec(engine):
+    with pytest.raises(EngineError):
+        engine.combine([])
+    with pytest.raises(EngineError):
+        engine.combine([{"nonsense": 1}])
+
+
+def test_test_accepts_raw_source_on_simulator(engine):
+    res = engine.test(source="Java.perform(function(){ send({tag:'t',msg:'hi'}); });",
+                      device_id="sim")
+    assert res["loaded"] is True
+    assert res["simulated"] is True

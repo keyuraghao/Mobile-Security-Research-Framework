@@ -7,6 +7,7 @@ Findings tab, and the MCP server like every other engine.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import time
 import uuid
@@ -44,9 +45,18 @@ class FindingsEngine(Engine):
         if not self._path.is_file():
             return []
         try:
-            return json.loads(self._path.read_text())
-        except Exception:
+            data = json.loads(self._path.read_text())
+        except (json.JSONDecodeError, OSError) as exc:
+            # Never silently start from empty and let the next save overwrite a
+            # damaged store: move the bad file aside so its data is preserved.
+            import time
+
+            backup = self._path.with_name(f"findings.corrupt-{int(time.time())}.json")
+            with contextlib.suppress(OSError):
+                self._path.rename(backup)
+            self.log.warning("findings store was unreadable (%s); backed up to %s", exc, backup)
             return []
+        return data if isinstance(data, list) else []
 
     def _save(self, items: list[dict[str, Any]]) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)

@@ -275,9 +275,12 @@ def run_logged(
                 proc.stdin.close()
         if timeout:
             def _kill() -> None:
-                timed_out["hit"] = True
-                with contextlib.suppress(Exception):
-                    proc.kill()
+                # Only a genuine timeout: if the process already finished it has
+                # an exit code, so poll() is not None and we must not flag it.
+                if proc.poll() is None:
+                    timed_out["hit"] = True
+                    with contextlib.suppress(Exception):
+                        proc.kill()
             watchdog = threading.Timer(timeout, _kill)
             watchdog.start()
         assert proc.stdout is not None
@@ -318,15 +321,21 @@ def spawn(
     argv = [str(part) for part in command]
     merged_env = {**os.environ, **env} if env else None
     out = open(stdout, "ab") if stdout else subprocess.DEVNULL  # noqa: SIM115
-    return subprocess.Popen(  # noqa: S603 - argv list, shell=False
-        argv,
-        **NO_WINDOW,
-        cwd=str(cwd) if cwd else None,
-        env=merged_env,
-        stdout=out,
-        stderr=subprocess.STDOUT,
-        stdin=subprocess.DEVNULL,
-    )
+    try:
+        return subprocess.Popen(  # noqa: S603 - argv list, shell=False
+            argv,
+            **NO_WINDOW,
+            cwd=str(cwd) if cwd else None,
+            env=merged_env,
+            stdout=out,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+        )
+    finally:
+        # The child has inherited (dup'd) the fd; the parent's copy must be closed
+        # or it leaks one fd per spawn for the lifetime of this process.
+        if out is not subprocess.DEVNULL:
+            out.close()
 
 
 def _as_text(value: object) -> str:

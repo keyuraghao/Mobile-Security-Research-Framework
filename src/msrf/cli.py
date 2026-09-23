@@ -67,13 +67,17 @@ def main(
     workspace: Path | None = typer.Option(
         None, "--workspace", "-w", help="Override the workspace directory."
     ),
-    log_level: str = typer.Option("INFO", "--log-level", help="Logging level."),
+    log_level: str | None = typer.Option(
+        None, "--log-level", help="Logging level (overrides config/env)."
+    ),
 ) -> None:
     """Initialise configuration and logging for every subcommand."""
     overrides: dict[str, Any] = {}
     if workspace is not None:
         overrides["workspace"] = workspace
-    if log_level:
+    # Only override when the flag was actually passed, so a log_level set in the
+    # config file or MSRF_LOG_LEVEL is respected instead of the CLI default.
+    if log_level is not None:
         overrides["log_level"] = log_level
     cfg = load_config(config, **overrides)
     cfg.ensure_dirs()
@@ -199,13 +203,18 @@ def _build_command(engine_name: str, method_name: str, spec) -> Any:
         )
 
     def command(**kwargs: Any) -> None:
-        call_kwargs: dict[str, Any] = {}
-        for key, value in kwargs.items():
-            if key in dict_params:
-                call_kwargs[key] = jsonlib.loads(value) if value else None
-            else:
-                call_kwargs[key] = value
         try:
+            call_kwargs: dict[str, Any] = {}
+            for key, value in kwargs.items():
+                if key in dict_params:
+                    try:
+                        call_kwargs[key] = jsonlib.loads(value) if value else None
+                    except jsonlib.JSONDecodeError as exc:
+                        raise MsrfError(
+                            f"--{key.replace('_', '-')} must be valid JSON: {exc}"
+                        ) from exc
+                else:
+                    call_kwargs[key] = value
             engine = get_engine(engine_name, _config())
             method = getattr(engine, method_name)
             result = method(**call_kwargs)

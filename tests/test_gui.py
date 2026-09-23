@@ -78,13 +78,52 @@ def test_sast_view_has_all_analyzer_tabs(qapp, tmp_path):
         assert expected in sub
 
 
+def _hooks_view(win):
+    from msrf.gui.hooks_view import HooksView
+
+    return next(win.tabs.widget(i) for i in range(win.tabs.count())
+                if isinstance(win.tabs.widget(i), HooksView))
+
+
 def test_hook_library_loads_into_combo(qapp, tmp_path):
     cfg = load_config(workspace=tmp_path)
     cfg.ensure_dirs()
     win = _make_window(cfg)
-    win._load_hooks()
     _drain(qapp, win)
-    assert win.hook_combo.count() >= 15  # large inbuilt library
+    view = _hooks_view(win)
+    assert view.combo.count() >= 15  # large inbuilt library
+
+
+def test_multi_hook_builds_combined_script(qapp, tmp_path):
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    view = _hooks_view(win)
+    # Two method rows on two classes, one library hook row.
+    view.multi.setRowCount(0)
+    view._multi_add_row("com.a.B", "login")
+    view._multi_add_row("com.a.C", "check")
+    view.multi_lib.setCurrentIndex(view.multi_lib.findData("ssl-pinning-bypass"))
+    view._multi_add_lib()
+    view._multi_build()
+    _drain(qapp, win)
+    script = view.custom.toPlainText()
+    assert script.count("Java.perform") >= 3
+    assert "com.a.B" in script and "com.a.C" in script
+
+
+def test_custom_hook_runs_typed_source_on_simulator(qapp, tmp_path):
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    view = _hooks_view(win)
+    view.device.setCurrentIndex(view.device.findData("sim"))
+    view.custom.setPlainText("Java.perform(function(){ send({tag:'t', msg:'hi'}); });")
+    view._custom_run()
+    _drain(qapp, win)
+    assert "loaded=True" in view.output.toPlainText()
 
 
 def test_sast_view_populates_tables(qapp, tmp_path):

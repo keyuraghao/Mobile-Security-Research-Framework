@@ -93,6 +93,7 @@ class AppDataEngine(Engine):
                 "or use a rooted device. adb said: " + (listing.stderr.strip() or "?"),
             )
         pulled: list[str] = []
+        dest_root = dest.resolve()
         for rel in listing.stdout.splitlines():
             rel = rel.strip().lstrip("./")
             if not rel:
@@ -100,7 +101,12 @@ class AppDataEngine(Engine):
             low = rel.lower()
             if not (low.endswith(_DB_SUFFIXES) or "/databases/" in low or "shared_prefs" in low):
                 continue
-            local = dest / rel
+            local = (dest / rel).resolve()
+            # Never write outside the destination: a malicious/broken device could
+            # return a path containing '..'; skip anything that escapes.
+            if not local.is_relative_to(dest_root):
+                self.log.warning("skipping suspicious device path outside workspace: %s", rel)
+                continue
             local.parent.mkdir(parents=True, exist_ok=True)
             # Binary-safe: capture raw bytes so SQLite files are not corrupted.
             proc = subprocess.run(  # noqa: S603 - argv list, shell=False

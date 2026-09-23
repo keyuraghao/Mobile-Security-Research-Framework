@@ -104,6 +104,18 @@ class HooksEngine(Engine):
             out_path: Optional path to write the rendered script; defaults to
                 ``<workspace>/hooks/<template>.js``.
         """
+        rendered = self._render(template, params)
+        target = (
+            Path(out_path).expanduser()
+            if out_path
+            else self.config.workspace / "hooks" / f"{template}.js"
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(rendered, encoding="utf-8")
+        return {"template": template, "path": str(target), "script": rendered}
+
+    def _render(self, template: str, params: dict[str, str] | None) -> str:
+        """Render a template to a script string without touching the disk."""
         manifest = self._manifest()
         if template not in manifest:
             raise EngineError(
@@ -121,24 +133,77 @@ class HooksEngine(Engine):
                 "hooks",
                 f"Template {template!r} requires params: {', '.join(sorted(missing))}",
             )
-        rendered = _PARAM_RE.sub(
-            lambda m: str(params.get(m.group(1), m.group(0))), source
-        )
-        # Any placeholder left unfilled is an error.
+        rendered = _PARAM_RE.sub(lambda m: str(params.get(m.group(1), m.group(0))), source)
         leftover = _PARAM_RE.findall(rendered)
         if leftover:
             raise EngineError(
                 "hooks", f"Unresolved placeholders: {', '.join(sorted(set(leftover)))}"
             )
+        return rendered
 
-        target = (
-            Path(out_path).expanduser()
-            if out_path
-            else self.config.workspace / "hooks" / f"{template}.js"
-        )
+    @action("Save a Frida script (any JavaScript source) to a file on disk.")
+    def save_script(self, script: str, out_path: str) -> dict[str, Any]:
+        """Write ``script`` to ``out_path`` (``.js`` appended if missing).
+
+        Lets the user keep a typed or edited hook anywhere they like, so it can
+        be reused later with ``test --script-path`` or ``combine``.
+        """
+        if not script.strip():
+            raise EngineError("hooks", "Refusing to save an empty script.")
+        target = Path(out_path).expanduser()
+        if target.suffix.lower() != ".js":
+            target = target.with_suffix(".js")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(rendered, encoding="utf-8")
-        return {"template": template, "path": str(target), "script": rendered}
+        target.write_text(script, encoding="utf-8")
+        return {"path": str(target), "bytes": len(script.encode("utf-8"))}
+
+    @action("Combine several hooks into one script that hooks many functions at once.")
+    def combine(self, specs: list[dict[str, Any]], out_path: str | None = None) -> dict[str, Any]:
+        """Build a single Frida script from several hook ``specs``.
+
+        Each spec is one of:
+          * ``{"template": <name>, "params": {...}}`` render a library template,
+          * ``{"class": <FQCN>, "method": <name>}`` shorthand for the
+            ``hook-method`` template (hook one method of one class),
+          * ``{"source": <raw JS>}`` include raw JavaScript verbatim.
+
+        The rendered blocks are concatenated (each keeps its own ``Java.perform``)
+        so one injection can instrument many methods across many classes at once.
+        Optionally saved to ``out_path``.
+        """
+        if not specs:
+            raise EngineError("hooks", "Provide at least one hook spec to combine.")
+        blocks: list[str] = []
+        labels: list[str] = []
+        for i, spec in enumerate(specs, start=1):
+            if "source" in spec:
+                blocks.append(str(spec["source"]))
+                labels.append(spec.get("label", f"raw#{i}"))
+            elif "class" in spec and "method" in spec:
+                blocks.append(self._render(
+                    "hook-method",
+                    {"CLASS": str(spec["class"]), "METHOD": str(spec["method"])},
+                ))
+                labels.append(f"{spec['class']}.{spec['method']}")
+            elif "template" in spec:
+                blocks.append(self._render(spec["template"], spec.get("params")))
+                labels.append(spec["template"])
+            else:
+                raise EngineError(
+                    "hooks",
+                    f"Spec #{i} must have 'template', 'class'+'method', or 'source'.",
+                )
+        header = (
+            "/*\n * msrf :: combined hook set (" + str(len(blocks)) + " hooks)\n * "
+            + "\n * ".join(labels)
+            + "\n */\n"
+        )
+        combined = header + "\n\n".join(blocks) + "\n"
+        result: dict[str, Any] = {"count": len(blocks), "hooks": labels, "script": combined}
+        if out_path is not None:
+            saved = self.save_script(combined, out_path)
+            result["path"] = saved["path"]
+        return result
 
     # -- testing ----------------------------------------------------------
 
@@ -151,6 +216,7 @@ class HooksEngine(Engine):
         template: str | None = None,
         script_path: str | None = None,
         mobsf_script: str | None = None,
+        source: str | None = None,
         params: dict[str, str] | None = None,
         package: str = DEFAULT_DUMMY_PACKAGE,
         device_id: str | None = None,
@@ -177,19 +243,22 @@ class HooksEngine(Engine):
             When ``device_id`` is ``"sim"`` the built-in simulator runs the
             payload in-process (no frida, no device required).
         """
-        if not template and not script_path and not mobsf_script:
+        if not template and not script_path and not mobsf_script and not source:
             raise EngineError(
-                "hooks", "Provide 'template', 'script_path', or 'mobsf_script'."
+                "hooks", "Provide 'template', 'script_path', 'mobsf_script', or 'source'."
             )
 
-        if mobsf_script:
+        if source:
+            # Raw JavaScript passed directly (typed/edited/combined in the GUI).
+            pass
+        elif mobsf_script:
             from .. import mobsf_scripts
 
             source = mobsf_scripts.read_script(mobsf_script)
         elif script_path:
             source = Path(script_path).expanduser().read_text(encoding="utf-8")
         else:
-            source = self.generate(template, params=params)["script"]  # type: ignore[arg-type]
+            source = self._render(template, params)  # type: ignore[arg-type]
 
         # Built-in simulator: no external device or frida needed.
         if device_id == SIM_DEVICE_ID:
@@ -232,6 +301,7 @@ class HooksEngine(Engine):
 
         pid = None
         session = None
+        resumed = False
         try:
             if spawn:
                 pid = device.spawn([package])
@@ -244,6 +314,7 @@ class HooksEngine(Engine):
             loaded = True
             if spawn and pid is not None:
                 device.resume(pid)
+                resumed = True
             time.sleep(duration)
         except frida.ProcessNotFoundError as exc:
             raise EngineError(
@@ -262,6 +333,11 @@ class HooksEngine(Engine):
             if session is not None:
                 with contextlib.suppress(Exception):
                     session.detach()
+            # A spawned app is created suspended; if we never resumed it (an
+            # error before resume), kill it so it is not left frozen on device.
+            if spawn and pid is not None and not resumed:
+                with contextlib.suppress(Exception):
+                    device.kill(pid)
 
         return {
             "package": package,

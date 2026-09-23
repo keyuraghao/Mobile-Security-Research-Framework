@@ -219,10 +219,15 @@ class DASTEngine(Engine):
             else self.config.workspace / "screenshots" / f"{serial}-{int(time.time())}.png"
         )
         target.parent.mkdir(parents=True, exist_ok=True)
-        proc = subprocess.run(  # noqa: S603
-            [adb, "-s", serial, "exec-out", "screencap", "-p"],
-            capture_output=True, timeout=30, check=False, **NO_WINDOW,
-        )
+        try:
+            proc = subprocess.run(  # noqa: S603
+                [adb, "-s", serial, "exec-out", "screencap", "-p"],
+                capture_output=True, timeout=30, check=False, **NO_WINDOW,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise EngineError(
+                "dast", "screencap timed out after 30s (is the device responsive?)"
+            ) from exc
         if proc.returncode != 0 or not proc.stdout:
             err = proc.stderr.decode(errors="replace")[:200]
             raise EngineError("dast", f"screencap failed: {err}")
