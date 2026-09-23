@@ -47,8 +47,10 @@ def main() -> int:
         "Self-contained Mobile & IoT SAST / DAST / pentest toolkit "
         "(desktop app + CLI + MCP server).\n\n"
         "### Download\n\n"
-        "Grab the file for your OS below, unzip and run `msrf` — nothing else to install. "
-        "Each asset has a matching `.sha256` for verification.\n\n"
+        "Windows: run `MSRF-<version>-setup.exe`, or unzip `MSRF-windows-x86_64.zip`. "
+        "Linux and macOS: unzip the `MSRF-*.zip` for your OS and run `msrf`. "
+        "Everything is bundled, nothing else to install. "
+        "Each file has a matching `.sha256` for verification.\n\n"
     )
     print(header + body)
     return 0

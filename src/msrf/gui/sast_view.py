@@ -267,7 +267,7 @@ class SASTView(QWidget):
 
         self.raw_view.setPlainText(_json.dumps(ctx, indent=2, default=str))
         self.host.status(
-            f"Analysis complete — score {appsec.get('security_score')}/100", 8000
+            f"Analysis complete: score {appsec.get('security_score')}/100", 8000
         )
         # Auto-collect the findings into the central Findings store.
         if self._hash and hasattr(self.host, "import_scan_findings"):

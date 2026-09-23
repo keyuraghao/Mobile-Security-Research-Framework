@@ -38,15 +38,15 @@ devices and networks you own or are explicitly permitted to test.</div>
 
 <h2>Getting started</h2>
 <ol>
-  <li><b>Static analysis</b> &mdash; open the <b>Static (SAST)</b> tab, choose an APK/IPA,
+  <li><b>Static analysis</b>: open the <b>Static (SAST)</b> tab, choose an APK/IPA,
       and click <b>Analyze</b>. Results appear as tables (findings, permissions,
       certificate, manifest, network, code analysis, binary/NDK, trackers,
       URLs/domains, secrets, components) and you can browse the app's internal
       files under the <b>Files</b> sub-tab.</li>
-  <li><b>Frida hooks</b> &mdash; the <b>Frida Hooks</b> tab has 20+ inbuilt payloads.
+  <li><b>Frida hooks</b>: the <b>Frida Hooks</b> tab has 20+ inbuilt payloads.
       Pick one and run it on the built-in <b>simulator</b> (no device needed) or a
       connected device.</li>
-  <li><b>Dynamic / Proxy / Network / IoT</b> &mdash; device instrumentation, traffic
+  <li><b>Dynamic / Proxy / Network / IoT</b>: device instrumentation, traffic
       interception (including WireGuard), interception-network setup, and nmap /
       binwalk recon.</li>
 </ol>
@@ -86,7 +86,7 @@ device with <b>Magisk</b>, install <b>LSPosed</b> and common Xposed modules
 <b>Static</b>, hook in <b>Frida Hooks</b> / <b>Dynamic</b>, grab databases in <b>App
 Data</b>, and collect results in <b>Findings</b>.</p>
 
-<h2>MCP server &mdash; how it is set up</h2>
+<h2>MCP server: how it is set up</h2>
 <p>msrf ships a Model Context Protocol (MCP) server that exposes <b>every</b>
 engine action as a tool, so an AI client (for example Claude) can drive the whole
 toolkit. Tools are named <code>&lt;engine&gt;_&lt;action&gt;</code> (e.g.

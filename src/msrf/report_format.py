@@ -102,7 +102,7 @@ def format_report(ctx: dict[str, Any]) -> str:
     # -- code analysis (SAST rules) -------------------------------------
     code = (ctx.get("code_analysis") or {}).get("findings") or {}
     if code:
-        e(_hr(f"CODE ANALYSIS — SAST rules ({len(code)})"))
+        e(_hr(f"CODE ANALYSIS: SAST rules ({len(code)})"))
         for rule, data in _sorted_code(code):
             meta = (data or {}).get("metadata") or {}
             sev = meta.get("severity", "info")
@@ -207,7 +207,7 @@ def format_report(ctx: dict[str, Any]) -> str:
     # -- sbom ------------------------------------------------------------
     sbom = (ctx.get("sbom") or {}).get("sbom_packages") or []
     if sbom:
-        e(_hr(f"SBOM — dependencies ({len(sbom)})"))
+        e(_hr(f"SBOM: dependencies ({len(sbom)})"))
         for pkg in sbom[:60]:
             if isinstance(pkg, dict):
                 e(f"  {pkg.get('name')} {pkg.get('version', '')}")

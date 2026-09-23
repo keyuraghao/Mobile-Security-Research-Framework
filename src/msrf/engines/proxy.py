@@ -1,8 +1,8 @@
-"""Proxy engine — traffic interception via mitmproxy.
+"""Proxy engine: traffic interception via mitmproxy.
 
 Runs ``mitmdump`` headless in the background, capturing flows to the workspace,
 and can decode a captured flow file to JSON. Supports every mitmproxy mode,
-including ``wireguard`` — which lets a device on *any* network tunnel its traffic
+including ``wireguard``, which lets a device on *any* network tunnel its traffic
 back to the analysis host (see the ``network`` engine for the device-side setup).
 """
 from __future__ import annotations

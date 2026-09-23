@@ -1,4 +1,4 @@
-"""msrf — a unified, cross-platform Mobile & IoT SAST/DAST/pentest toolkit.
+"""msrf: a unified, cross-platform Mobile & IoT SAST/DAST/pentest toolkit.
 
 msrf wraps and orchestrates best-in-class security engines behind a single
 CLI and an MCP (Model Context Protocol) server:
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 __all__ = ["__version__", "get_version"]
 
-__version__ = "0.3.5"
+__version__ = "0.3.6"
 
 
 def get_version() -> str:

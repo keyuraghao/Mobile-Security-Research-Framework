@@ -1,4 +1,4 @@
-"""Simulator engine — a built-in device & Frida target requiring nothing external.
+"""Simulator engine: a built-in device & Frida target requiring nothing external.
 
 Exposes the built-in simulator (:mod:`msrf.sim`) as first-class actions so the
 dynamic-analysis and Frida-payload workflows can be demonstrated and tested with
@@ -22,7 +22,7 @@ class SimEngine(Engine):
     """Built-in device/app simulator for dependency-free testing."""
 
     name = "sim"
-    summary = "Built-in Android/Frida simulator — test with nothing external attached."
+    summary = "Built-in Android/Frida simulator: test with nothing external attached."
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)

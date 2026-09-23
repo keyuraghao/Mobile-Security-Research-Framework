@@ -1,4 +1,4 @@
-"""msrf desktop application (PyQt6) — classic Windows-style shell.
+"""msrf desktop application (PyQt6): classic Windows-style shell.
 
 A menu bar / tool bar / status bar application with a tabbed workspace over the
 msrf engines: a connection dashboard, static analysis (tabular, with an APK

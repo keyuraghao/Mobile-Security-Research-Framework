@@ -46,7 +46,7 @@ def ensure_frida_server(
 
     Resolution order:
       1. A matching binary already in ``local_dir`` (e.g. the user's Frida
-         folder) — used as-is, nothing is downloaded.
+         folder): used as-is, nothing is downloaded.
       2. A previously cached download in ``cache_dir``.
       3. A fresh download from the Frida GitHub release matching the installed
          Frida version (or ``version`` if given), decompressed into the cache.

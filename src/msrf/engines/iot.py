@@ -1,4 +1,4 @@
-"""IoT engine — network reconnaissance and firmware analysis.
+"""IoT engine: network reconnaissance and firmware analysis.
 
 Wraps ``nmap`` for host/port discovery and ``binwalk`` for firmware signature
 scanning and extraction. Both tools are located on ``PATH`` cross-platform.

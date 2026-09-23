@@ -1,74 +1,49 @@
 # Changelog
 
-All notable changes to **msrf** are documented here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres
-to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to **msrf** are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.3.6] - 2026-09-22
+
+### Changed
+- Removed every em-dash and en-dash from the app and the repo: technique labels now read like "Enumerate: devices" and "Device: capture logcat", status messages like "Analysis complete: score 36/100", and the Help, docstrings and comments use normal punctuation.
+- CHANGELOG, README, CONTRIBUTING and SECURITY keep each sentence, bullet and paragraph on one line instead of breaking lines mid-sentence, so release notes read cleanly on GitHub.
+- README screenshots regenerated to match.
 
 ## [0.3.5] - 2026-09-22
 
 ### Changed
-- **Emulator works the normal Android SDK way.** Launch opens the standard
-  emulator in its own window (like Android Studio). Root-only flags are no longer
-  used for a normal launch; Magisk, LSPosed and Xposed modules moved to an optional
-  Advanced section.
-- The Emulator tab now has an **Activity** box (what is running and for how long,
-  with a warning if a step goes quiet), a **progress bar**, and a **Live log** that
-  streams every line each step writes. The log is also saved to
-  `logs/emulator.log` (Open log file / Copy path buttons, and `emulator log_tail`
-  on the CLI/MCP) so a hang can be diagnosed.
-- Findings tables sort by severity rank (high, warning, info) instead of
-  alphabetically, most severe first by default.
+- **Emulator works the normal Android SDK way.** Launch opens the standard emulator in its own window (like Android Studio). Root-only flags are no longer used for a normal launch; Magisk, LSPosed and Xposed modules moved to an optional Advanced section.
+- The Emulator tab now has an **Activity** box (what is running and for how long, with a warning if a step goes quiet), a **progress bar**, and a **Live log** that streams every line each step writes. The log is also saved to `logs/emulator.log` (Open log file / Copy path buttons, and `emulator log_tail` on the CLI/MCP) so a hang can be diagnosed.
+- Findings tables sort by severity rank (high, warning, info) instead of alphabetically, most severe first by default.
 
 ### Fixed
-- The app no longer "refreshes itself": the background connection check is quiet
-  (no progress-bar flash) and runs every 30 s instead of 6 s, and on Windows no
-  console window flashes when the app runs adb or other tools.
-- Rooted all-in-one no longer starts a second emulator; it stops and waits before
-  restarting after rooting.
-- Emulator downloads show progress and use a `.part` file, so an interrupted
-  download can no longer leave a broken file that gets reused.
+- The app no longer "refreshes itself": the background connection check is quiet (no progress-bar flash) and runs every 30 s instead of 6 s, and on Windows no console window flashes when the app runs adb or other tools.
+- Rooted all-in-one no longer starts a second emulator; it stops and waits before restarting after rooting.
+- Emulator downloads show progress and use a `.part` file, so an interrupted download can no longer leave a broken file that gets reused.
 - Long emulator steps are killed by their timeout even if they print nothing.
-- Dynamic tab: with Target = Simulator, the Enumerate techniques now answer from
-  the simulator instead of failing with "device not found"; hardware-only
-  techniques explain that a device or the emulator is needed.
-- File browser shows `AndroidManifest.xml` and other compiled XML as readable XML
-  (decoded from Android binary XML); other binary files show a proper hex dump.
+- Dynamic tab: with Target = Simulator, the Enumerate techniques now answer from the simulator instead of failing with "device not found"; hardware-only techniques explain that a device or the emulator is needed.
+- File browser shows `AndroidManifest.xml` and other compiled XML as readable XML (decoded from Android binary XML); other binary files show a proper hex dump.
 - Disabled primary buttons now look disabled.
 
 ### Docs
-- All README screenshots regenerated from the current build by the new
-  `packaging/capture_screenshots.py` (real DIVA scan, neutral paths). README
-  download section, tab list and emulator description brought up to date.
+- All README screenshots regenerated from the current build by the new `packaging/capture_screenshots.py` (real DIVA scan, neutral paths). README download section, tab list and emulator description brought up to date.
 
 ## [0.3.4] - 2026-09-22
 
 ### Changed
-- **Renamed the package, command and pip distribution from `mobiot` to `msrf`**
-  to match the product name (Mobile Security and Research Framework). The CLI/MCP
-  command is now `msrf` (with `msrf-mcp` and `msrf-gui`), the Python package is
-  `msrf`, the pip distribution and wheel are `msrf-<version>`, environment
-  variables use the `MSRF_` prefix, and MCP tools are `msrf_*`. Release titles and
-  all downloadable app files already use the product name / `MSRF-*`.
+- **Renamed the package, command and pip distribution from `mobiot` to `msrf`** to match the product name (Mobile Security and Research Framework). The CLI/MCP command is now `msrf` (with `msrf-mcp` and `msrf-gui`), the Python package is `msrf`, the pip distribution and wheel are `msrf-<version>`, environment variables use the `MSRF_` prefix, and MCP tools are `msrf_*`. Release titles and all downloadable app files already use the product name / `MSRF-*`.
 
 ## [0.3.3] - 2026-09-22
 
 ### Added
-- **Windows installer** — a proper Inno Setup installer (`MSRF-<version>-setup.exe`)
-  built in CI alongside the portable bundle: Start-menu and optional desktop
-  shortcuts, an opt-in "add to PATH" for the CLI/MCP, per-user workspace cleanup on
-  uninstall, and the app icon. Attached to every release with a `.sha256`.
-- **Light / Dark / System theme** — a Fusion-based theming system (View menu ->
-  Theme) with palette + stylesheet for both modes, severity colours legible on
-  either, persisted via `QSettings`. Follows the OS in System mode.
-- **Application icon / favicon** shipped as `icon.ico` (multi-size) and `icon.png`,
-  used for the window, the installer, and the built executable.
+- **Windows installer**: a proper Inno Setup installer (`MSRF-<version>-setup.exe`) built in CI alongside the portable bundle: Start-menu and optional desktop shortcuts, an opt-in "add to PATH" for the CLI/MCP, per-user workspace cleanup on uninstall, and the app icon. Attached to every release with a `.sha256`.
+- **Light / Dark / System theme**: a Fusion-based theming system (View menu -> Theme) with palette + stylesheet for both modes, severity colours legible on either, persisted via `QSettings`. Follows the OS in System mode.
+- **Application icon / favicon** shipped as `icon.ico` (multi-size) and `icon.png`, used for the window, the installer, and the built executable.
 
 ### Changed
-- **Renamed to "Mobile Security and Research Framework"** across the desktop app
-  (window title, About dialog, display name), Help tab, installer and README. The
-  package, CLI command and MCP server name remain `msrf` for compatibility.
+- **Renamed to "Mobile Security and Research Framework"** across the desktop app (window title, About dialog, display name), Help tab, installer and README. The package, CLI command and MCP server name remain `msrf` for compatibility.
 
 ## [0.3.2] - 2026-09-22
 
@@ -76,31 +51,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Emulator `setup` now resolves an actually-available system image for the chosen API level (with type/ABI fallbacks) instead of failing on non-existent combos (e.g. API 7 has no x86_64 image); a new **List images** action/button shows what's installable. Clear error naming the API levels that do have images.
 
 ### Added
-- **Full MobSF Frida script library** exposed through the hooks engine
-  (`hooks.mobsf_scripts` / `mobsf_script_source`, and `hooks.test --mobsf-script`):
-  all ~118 MobSF-bundled scripts for Android and iOS (API monitor, SSL/root/
-  debugger/jailbreak bypasses, crypto & keychain dumps, activity/deeplink traces,
-  biometric bypass, and the whole `others/` library). The Dynamic (DAST) dropdown
-  now offers 150+ techniques.
-- **On-device DAST techniques (adb):** `dast.install_app`, `pull_apk`, `logcat`,
-  `dumpsys`, `screenshot`, `start_activity`, `activity_tester`, `deeplink` —
-  matching MobSF's device operations.
-- **Static-analysis rendering completeness:** dedicated GUI tables for every
-  analyzer that was previously Raw-JSON-only (APKID, behaviour, NIAP,
-  permission-mapping, SBOM; emails + firebase folded into URLs), plus an iOS tab
-  (Info.plist, ATS, Mach-O, dylib/framework, App Store).
+- **Full MobSF Frida script library** exposed through the hooks engine (`hooks.mobsf_scripts` / `mobsf_script_source`, and `hooks.test --mobsf-script`): all ~118 MobSF-bundled scripts for Android and iOS (API monitor, SSL/root/ debugger/jailbreak bypasses, crypto & keychain dumps, activity/deeplink traces, biometric bypass, and the whole `others/` library). The Dynamic (DAST) dropdown now offers 150+ techniques.
+- **On-device DAST techniques (adb):** `dast.install_app`, `pull_apk`, `logcat`, `dumpsys`, `screenshot`, `start_activity`, `activity_tester`, `deeplink`, matching MobSF's device operations.
+- **Static-analysis rendering completeness:** dedicated GUI tables for every analyzer that was previously Raw-JSON-only (APKID, behaviour, NIAP, permission-mapping, SBOM; emails + firebase folded into URLs), plus an iOS tab (Info.plist, ATS, Mach-O, dylib/framework, App Store).
 
 ### Notes
-- SAST already runs *every* MobSF analyzer for APK/IPA (msrf calls MobSF's
-  `apk_analysis_task`/`ipa_analysis_task` directly). Remaining coverage items are
-  specialised: source-zip / `.aab` / `.appx` / `.so` inputs (same analyzers,
-  different container), a native TLS-tester harness, Frida-gadget APK patching for
-  non-rooted, and the full iOS dynamic (Corellium/jailbroken-SSH) subsystem.
+- SAST already runs *every* MobSF analyzer for APK/IPA (msrf calls MobSF's `apk_analysis_task`/`ipa_analysis_task` directly). Remaining coverage items are specialised: source-zip / `.aab` / `.appx` / `.so` inputs (same analyzers, different container), a native TLS-tester harness, Frida-gadget APK patching for non-rooted, and the full iOS dynamic (Corellium/jailbroken-SSH) subsystem.
 
 ## [0.3.1] - 2026-09-22
 
 ### Added
-- **Dockable live emulator screen** — a side-by-side panel that mirrors a connected emulator/device (screencap polling, tap + hardware-key forwarding via the bundled adb) and can be floated into its own window, so it stays usable while working in any other tab (View menu / toolbar toggle).
+- **Dockable live emulator screen**: a side-by-side panel that mirrors a connected emulator/device (screencap polling, tap + hardware-key forwarding via the bundled adb) and can be floated into its own window, so it stays usable while working in any other tab (View menu / toolbar toggle).
 - **Emulator API-level dropdown** spans API 7 (Android 2.1) to 35 (Android 15).
 - **In-app emulator flow guide** on the Emulator and Help tabs (step-by-step provisioning).
 - **Automated releases**: per-release notes generated from `CHANGELOG.md` and a `.sha256` checksum attached for every asset; README status badges (CI, release, downloads, Python, platforms, license).
@@ -146,44 +107,20 @@ Fully self-contained desktop app: download one file per OS, run it, nothing else
 Initial public release.
 
 ### Added
-- **Extensible engine architecture** — a registry + `@action` decorator so new
-  capabilities auto-expose on the CLI, the desktop GUI and the MCP server with no
-  extra wiring.
-- **`sast` engine** — native MobSF server management and static analysis
-  (upload, scan, JSON/scorecard/PDF reports, recent scans, delete).
-- **`dast` engine** — MobSF dynamic analysis plus Frida device/process/app
-  enumeration and on-demand frida-server provisioning.
-- **`hooks` engine** — a **library of 20+ inbuilt Frida hooks** across four
-  categories (bypass / monitor / recon / trace): SSL-pinning, hostname-verifier,
-  root, anti-Frida and biometric bypasses; crypto, keystore, SharedPreferences,
-  SQLite, file-I/O, clipboard, Base64, HTTP, intent, logcat and native-library
-  monitors; class enumeration; method trace/hook and stack-trace dumps. Hooks run
-  with one command — JavaScript is only needed for truly custom targets.
-- **`runtime` engine** — objection-driven runtime exploration (SSL/root bypass,
-  keystore listing, class listing, arbitrary commands).
-- **`proxy` engine** — mitmproxy capture in regular/transparent/socks/upstream/
-  **wireguard** modes, plus flow-file decoding to JSON.
-- **`network` engine** — set up the dynamic-analysis network anywhere: host-IP
-  discovery, CA-cert install, device proxy wiring (Wi-Fi or `adb reverse`), and a
-  WireGuard "device anywhere" tunnel with QR output.
-- **`iot` engine** — nmap host discovery / port-service scanning and binwalk
-  firmware signature scanning and extraction.
-- **`sim` engine** — a built-in, dependency-free DIVA-like device + Frida-script
-  simulator so payloads and the dynamic workflow can be generated, validated and
-  "run" with nothing external attached.
-- **Desktop application** (`msrf ui`, PyQt6) — a cross-platform tabbed control
-  centre (Dashboard, Static, Frida Hooks, Dynamic, Proxy, Network, IoT) with all
-  engine calls on worker threads.
-- **CLI** (`msrf`) auto-generated from the registry (`info`, `preflight`,
-  `version`, `serve`, `ui`, and every engine action).
-- **MCP server** (`msrf-mcp` / `msrf serve`) exposing every action as a tool
-  over stdio or HTTP.
-- **MobSF slim/offline profile** (on by default) — deterministic `MOBSF_SECRET_KEY`
-  (skips the first-run block that downloads ~104MB JADX and can hang), system
-  `jadx`, headless REST-only, no telemetry; the vendored MobSF source is patched
-  to make its startup update-check opt-in for guaranteed zero egress.
-- **Cross-platform** throughout: tool discovery via `PATH`, no hardcoded paths,
-  `platformdirs` workspace, shell-free subprocess execution.
+- **Extensible engine architecture**: a registry + `@action` decorator so new capabilities auto-expose on the CLI, the desktop GUI and the MCP server with no extra wiring.
+- **`sast` engine**: native MobSF server management and static analysis (upload, scan, JSON/scorecard/PDF reports, recent scans, delete).
+- **`dast` engine**: MobSF dynamic analysis plus Frida device/process/app enumeration and on-demand frida-server provisioning.
+- **`hooks` engine**: a **library of 20+ inbuilt Frida hooks** across four categories (bypass / monitor / recon / trace): SSL-pinning, hostname-verifier, root, anti-Frida and biometric bypasses; crypto, keystore, SharedPreferences, SQLite, file-I/O, clipboard, Base64, HTTP, intent, logcat and native-library monitors; class enumeration; method trace/hook and stack-trace dumps. Hooks run with one command: JavaScript is only needed for truly custom targets.
+- **`runtime` engine**: objection-driven runtime exploration (SSL/root bypass, keystore listing, class listing, arbitrary commands).
+- **`proxy` engine**: mitmproxy capture in regular/transparent/socks/upstream/ **wireguard** modes, plus flow-file decoding to JSON.
+- **`network` engine**: set up the dynamic-analysis network anywhere: host-IP discovery, CA-cert install, device proxy wiring (Wi-Fi or `adb reverse`), and a WireGuard "device anywhere" tunnel with QR output.
+- **`iot` engine**: nmap host discovery / port-service scanning and binwalk firmware signature scanning and extraction.
+- **`sim` engine**: a built-in, dependency-free DIVA-like device + Frida-script simulator so payloads and the dynamic workflow can be generated, validated and "run" with nothing external attached.
+- **Desktop application** (`msrf ui`, PyQt6), a cross-platform tabbed control centre (Dashboard, Static, Frida Hooks, Dynamic, Proxy, Network, IoT) with all engine calls on worker threads.
+- **CLI** (`msrf`) auto-generated from the registry (`info`, `preflight`, `version`, `serve`, `ui`, and every engine action).
+- **MCP server** (`msrf-mcp` / `msrf serve`) exposing every action as a tool over stdio or HTTP.
+- **MobSF slim/offline profile** (on by default): deterministic `MOBSF_SECRET_KEY` (skips the first-run block that downloads ~104MB JADX and can hang), system `jadx`, headless REST-only, no telemetry; the vendored MobSF source is patched to make its startup update-check opt-in for guaranteed zero egress.
+- **Cross-platform** throughout: tool discovery via `PATH`, no hardcoded paths, `platformdirs` workspace, shell-free subprocess execution.
 
 [Unreleased]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/compare/v0.3.2...HEAD
 [0.3.2]: https://github.com/keyuraghao/Mobile_SAST_DAST_Pentest/releases/tag/v0.3.2

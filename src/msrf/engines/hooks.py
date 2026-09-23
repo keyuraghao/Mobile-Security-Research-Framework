@@ -1,4 +1,4 @@
-"""Hooks engine — Frida JavaScript payload generation and testing.
+"""Hooks engine: Frida JavaScript payload generation and testing.
 
 Generates Frida hook scripts from a bundled, parameterised template library and
 runs them against a target application (by default the intentionally-vulnerable

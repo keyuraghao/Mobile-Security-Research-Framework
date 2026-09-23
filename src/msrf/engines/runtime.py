@@ -1,4 +1,4 @@
-"""Runtime engine — runtime mobile exploration via objection.
+"""Runtime engine: runtime mobile exploration via objection.
 
 Wraps the ``objection`` CLI (itself Frida-powered) to run one-shot runtime
 commands against an app non-interactively: disabling SSL pinning, defeating root

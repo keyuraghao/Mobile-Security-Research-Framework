@@ -84,24 +84,24 @@ class DastView(QWidget):
     def _load_techniques(self) -> None:
         # Static techniques first; Frida hooks are appended once loaded.
         base = [
-            {"label": "Enumerate — devices", "engine": "dast", "method": "devices"},
-            {"label": "Enumerate — applications", "engine": "dast", "method": "applications"},
-            {"label": "Enumerate — processes", "engine": "dast", "method": "processes"},
+            {"label": "Enumerate: devices", "engine": "dast", "method": "devices"},
+            {"label": "Enumerate: applications", "engine": "dast", "method": "applications"},
+            {"label": "Enumerate: processes", "engine": "dast", "method": "processes"},
             {"label": "Provision frida-server on device", "engine": "dast", "method": "provision_frida_server"},
-            {"label": "Objection — disable SSL pinning", "engine": "runtime", "method": "disable_ssl_pinning", "pkg": True},
-            {"label": "Objection — disable root detection", "engine": "runtime", "method": "disable_root_detection", "pkg": True},
-            {"label": "Objection — list keystore", "engine": "runtime", "method": "keystore_list", "pkg": True},
-            {"label": "Objection — list classes", "engine": "runtime", "method": "list_classes", "pkg": True},
-            {"label": "Objection — run command", "engine": "runtime", "method": "run_command", "pkg": True, "cmd": True},
-            # On-device techniques (adb) — need a real connected device.
-            {"label": "Device — capture logcat", "engine": "dast", "method": "logcat"},
-            {"label": "Device — dumpsys (all)", "engine": "dast", "method": "dumpsys"},
-            {"label": "Device — dumpsys (service)", "engine": "dast", "method": "dumpsys", "cmd": True, "cmd_arg": "service"},
-            {"label": "Device — screenshot", "engine": "dast", "method": "screenshot"},
-            {"label": "Device — install APK", "engine": "dast", "method": "install_app", "cmd": True, "cmd_arg": "apk_path"},
-            {"label": "Device — pull APK(s)", "engine": "dast", "method": "pull_apk", "pkg": True},
-            {"label": "Device — start activity", "engine": "dast", "method": "start_activity", "pkg": True, "cmd": True, "cmd_arg": "activity"},
-            {"label": "Device — send deeplink", "engine": "dast", "method": "deeplink", "cmd": True, "cmd_arg": "uri"},
+            {"label": "Objection: disable SSL pinning", "engine": "runtime", "method": "disable_ssl_pinning", "pkg": True},
+            {"label": "Objection: disable root detection", "engine": "runtime", "method": "disable_root_detection", "pkg": True},
+            {"label": "Objection: list keystore", "engine": "runtime", "method": "keystore_list", "pkg": True},
+            {"label": "Objection: list classes", "engine": "runtime", "method": "list_classes", "pkg": True},
+            {"label": "Objection: run command", "engine": "runtime", "method": "run_command", "pkg": True, "cmd": True},
+            # On-device techniques (adb): need a real connected device.
+            {"label": "Device: capture logcat", "engine": "dast", "method": "logcat"},
+            {"label": "Device: dumpsys (all)", "engine": "dast", "method": "dumpsys"},
+            {"label": "Device: dumpsys (service)", "engine": "dast", "method": "dumpsys", "cmd": True, "cmd_arg": "service"},
+            {"label": "Device: screenshot", "engine": "dast", "method": "screenshot"},
+            {"label": "Device: install APK", "engine": "dast", "method": "install_app", "cmd": True, "cmd_arg": "apk_path"},
+            {"label": "Device: pull APK(s)", "engine": "dast", "method": "pull_apk", "pkg": True},
+            {"label": "Device: start activity", "engine": "dast", "method": "start_activity", "pkg": True, "cmd": True, "cmd_arg": "activity"},
+            {"label": "Device: send deeplink", "engine": "dast", "method": "deeplink", "cmd": True, "cmd_arg": "uri"},
         ]
         self._techniques = base
         for t in base:
@@ -110,7 +110,7 @@ class DastView(QWidget):
         def add_hooks(tpls):
             for t in sorted(tpls, key=lambda x: (x["category"], x["name"])):
                 spec = {
-                    "label": f"Frida hook — {t['name']} ({t['category']})",
+                    "label": f"Frida hook: {t['name']} ({t['category']})",
                     "engine": "hooks",
                     "method": "test",
                     "template": t["name"],

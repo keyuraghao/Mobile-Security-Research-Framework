@@ -1,4 +1,4 @@
-"""DAST engine — dynamic analysis via MobSF and Frida device orchestration.
+"""DAST engine: dynamic analysis via MobSF and Frida device orchestration.
 
 Combines two capabilities:
 

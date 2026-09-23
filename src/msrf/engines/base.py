@@ -5,7 +5,7 @@ Individual operations are ordinary methods decorated with :func:`action`, which
 records lightweight metadata used to auto-expose them on both the CLI and the
 MCP server. This is the single extension point of msrf: to add a capability in
 a future release, write an ``Engine`` subclass, decorate its methods with
-``@action`` and register it with :func:`msrf.registry.register` — the CLI and
+``@action`` and register it with :func:`msrf.registry.register`. The CLI and
 MCP surfaces pick it up automatically, no wiring required.
 """
 from __future__ import annotations

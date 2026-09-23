@@ -1,13 +1,13 @@
 """Built-in device & Frida-script simulator.
 
 Provides a self-contained target so the dynamic-analysis and Frida-payload
-workflows can be exercised with *nothing external attached* — no Android
+workflows can be exercised with *nothing external attached*: no Android
 emulator, no SDK, no physical device. It is not a real Android runtime: it
 cannot execute an APK or real Frida JS. Instead it:
 
 * Models a small DIVA-like Android device/app (``SimDevice`` / ``SimApp``).
 * Statically validates a generated Frida script (``FridaScriptSimulator.
-  validate``) — the same checks that catch a broken payload before it hits a
+  validate``): the same checks that catch a broken payload before it hits a
   real device.
 * Produces realistic ``send()`` output for the bundled hook templates
   (``FridaScriptSimulator.simulate``) so a payload can be "run" and inspected.
@@ -176,7 +176,7 @@ class FridaScriptSimulator:
             issues.append(
                 "no 'Java.perform' (Android) or 'ObjC.' (iOS) entry point found"
             )
-        # Count brackets on code only — strip strings/comments so JVM type
+        # Count brackets on code only; strip strings/comments so JVM type
         # signatures like '[Ljava/lang/String;' don't cause false positives.
         code = _strip_strings_and_comments(source)
         for open_c, close_c in (("{", "}"), ("(", ")"), ("[", "]")):

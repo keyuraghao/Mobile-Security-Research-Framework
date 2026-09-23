@@ -213,14 +213,14 @@ def test_dast_simulator_target_enumerates_and_explains_hardware_only(qapp, tmp_p
                 if isinstance(win.tabs.widget(i), DastView))
     view.device.setCurrentIndex(view.device.findData("sim"))
 
-    view.technique.setCurrentIndex(view.technique.findText("Enumerate — applications"))
+    view.technique.setCurrentIndex(view.technique.findText("Enumerate: applications"))
     view._run()
     _drain(qapp, win)
     out = view.output.toPlainText()
     assert "jakhar.aseem.diva" in out
     assert "error" not in out.lower()
 
-    view.technique.setCurrentIndex(view.technique.findText("Device — capture logcat"))
+    view.technique.setCurrentIndex(view.technique.findText("Device: capture logcat"))
     view._run()
     _drain(qapp, win)
     assert "needs a real device or the emulator" in view.output.toPlainText()

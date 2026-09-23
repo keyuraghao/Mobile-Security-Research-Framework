@@ -1,7 +1,7 @@
 """Android device helpers built on ``adb`` (cross-platform).
 
 ``adb`` is located via :func:`msrf.platform_utils.which`, so this works
-wherever the Android platform-tools are installed and on ``PATH`` — Linux,
+wherever the Android platform-tools are installed and on ``PATH``: Linux,
 macOS or Windows. iOS device support is intentionally out of scope here; the
 Frida/objection engines talk to iOS over USB via their own tooling.
 """

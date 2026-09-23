@@ -1,4 +1,4 @@
-"""SAST engine — static analysis via MobSF.
+"""SAST engine: static analysis via MobSF.
 
 Manages a native MobSF server (start/stop/status) in the shared virtualenv and
 drives the MobSF REST API to upload apps, run static scans and fetch reports.
@@ -58,7 +58,7 @@ class MobSFServer:
     def secret_key(self) -> str:
         """Return the Django secret key, generating and persisting if needed.
 
-        Setting ``MOBSF_SECRET_KEY`` short-circuits MobSF's first-run block —
+        Setting ``MOBSF_SECRET_KEY`` short-circuits MobSF's first-run block,
         the code path that otherwise downloads JADX from GitHub and can hang.
         """
         if self.mobsf.secret_key:
@@ -103,7 +103,7 @@ class MobSFServer:
     def _prepare_home(self) -> None:
         """Pre-launch prep so the offline profile actually takes effect.
 
-        * Delete the generated ``config.py`` — once present it shadows the
+        * Delete the generated ``config.py``, because once present it shadows the
           env-driven defaults, so we remove it to guarantee our env wins.
         * Belt-and-suspenders: satisfy MobSF's expected JADX path with a link to
           the system binary so the download is never attempted (POSIX only).

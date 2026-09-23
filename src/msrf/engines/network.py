@@ -1,11 +1,11 @@
-"""Network engine — wire a device into the analysis network, from anywhere.
+"""Network engine: wire a device into the analysis network, from anywhere.
 
 Provides the device-side plumbing that makes dynamic analysis work regardless of
 where the target device physically sits:
 
-* **Local network** — point a device's global HTTP proxy (or ``adb reverse``) at
+* **Local network**: point a device's global HTTP proxy (or ``adb reverse``) at
   the mitmproxy host and install the mitmproxy CA certificate.
-* **Anywhere** — bring up mitmproxy's WireGuard mode and emit the client config
+* **Anywhere**: bring up mitmproxy's WireGuard mode and emit the client config
   (plus an ASCII QR when ``qrcode`` is available) so a physical device on any
   network tunnels its traffic back to the analysis host.
 
@@ -194,7 +194,7 @@ class NetworkEngine(Engine):
 
         The device imports the returned WireGuard config (scan the QR, or paste
         the config into the WireGuard app) to route all its traffic through this
-        host's mitmproxy — no shared network required. Ensure the host's
+        host's mitmproxy, so no shared network is required. Ensure the host's
         WireGuard UDP port is reachable (port-forward / VPS) for true "anywhere".
         """
         started = self.proxy.start_capture(mode="wireguard")
