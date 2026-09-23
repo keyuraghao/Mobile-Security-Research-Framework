@@ -82,6 +82,7 @@ def _load_builtins() -> None:
         runtime,
         sast,
         sim,
+        workflow,
     )
 
     _BUILTINS_LOADED = True

@@ -60,6 +60,7 @@ def test_mainwindow_builds_all_tabs(qapp, tmp_path):
         "Network",
         "IoT",
         "Findings",
+        "Activity",
         "Settings",
         "Help",
     ]
@@ -387,3 +388,35 @@ def test_dashboard_shows_engines_and_finding_charts(qapp, tmp_path):
     assert "2/2" not in dash.summary.text()              # 1 of 2 ready
     assert "1/2 engines ready" in dash.summary.text()
     assert "3 findings" in dash.summary.text()
+
+
+def test_activity_log_records_labelled_tasks(qapp, tmp_path):
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    activity = next(win.tabs.widget(i) for i in range(win.tabs.count())
+                    if win.tabs.tabText(i) == "Activity")
+    before = activity.table.rowCount()
+    win.submit(lambda: {"ok": 1}, label="Test task", params={"x": 1})
+    _drain(qapp, win)
+    for _ in range(10):
+        qapp.processEvents()
+    assert activity.table.rowCount() == before + 1
+    # newest row is at the top and shows the label + finished status
+    assert activity.table.item(0, 0).text() == "Test task"
+    assert activity.table.item(0, 2).text() == "finished"
+    activity.table.selectRow(0)
+    assert '"ok": 1' in activity.out.toPlainText()
+    assert '"x": 1' in activity.params.toPlainText()
+
+
+def test_quiet_tasks_are_not_logged(qapp, tmp_path):
+    cfg = load_config(workspace=tmp_path)
+    cfg.ensure_dirs()
+    win = _make_window(cfg)
+    _drain(qapp, win)
+    n = len(win.activity.entries)
+    win.submit(lambda: 1, quiet=True, label="should be skipped")
+    _drain(qapp, win)
+    assert len(win.activity.entries) == n

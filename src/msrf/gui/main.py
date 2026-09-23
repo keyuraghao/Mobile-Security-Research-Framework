@@ -38,6 +38,7 @@ from .. import get_version
 from ..config import Config, load_config
 from ..registry import get_engine
 from . import theme
+from .activity import ActivityLog, ActivityView
 from .appdata_view import AppDataView
 from .dashboard_view import DashboardView
 from .dast_view import DastView
@@ -88,6 +89,7 @@ class MainWindow(QMainWindow):
         from PyQt6.QtCore import QSettings
 
         self._settings = QSettings()
+        self.activity = ActivityLog(config.workspace)
 
         self.setWindowTitle(
             f"Mobile Security Research Framework  {get_version()}"
@@ -122,6 +124,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self._tab_network(), "Network")
         self.tabs.addTab(self._tab_iot(), "IoT")
         self.tabs.addTab(self.findings_view, "Findings")
+        self.tabs.addTab(ActivityView(self), "Activity")
         self.tabs.addTab(SettingsView(self), "Settings")
         self.tabs.addTab(HelpView(), "Help")
 
@@ -162,18 +165,33 @@ class MainWindow(QMainWindow):
         on_result: Callable[[Any], None] | None = None,
         on_error: Callable[[str], None] | None = None,
         quiet: bool = False,
+        label: str | None = None,
+        params: Any = None,
         **kwargs: Any,
     ) -> None:
         # ``quiet`` tasks (e.g. the periodic connection poll) do not toggle the
         # global busy indicator, so they run in the background without flashing
         # the progress bar or otherwise looking like the app is "refreshing".
+        # A ``label`` records the task in the Activity log (Output/Log/Params).
+        eid = self.activity.start(label, params) if (label and not quiet) else None
         if not quiet:
             self._set_busy(True)
+
+        def _res(r: Any) -> None:
+            if eid is not None:
+                self.activity.finish(eid, "finished", output=r)
+            if on_result:
+                on_result(r)
+
+        def _err(e: str) -> None:
+            if eid is not None:
+                self.activity.finish(eid, "error", log=str(e))
+            if on_error:
+                on_error(e)
+
         worker = Worker(fn, *args, **kwargs)
-        if on_result:
-            worker.signals.result.connect(on_result)
-        if on_error:
-            worker.signals.error.connect(on_error)
+        worker.signals.result.connect(_res)
+        worker.signals.error.connect(_err)
         if not quiet:
             worker.signals.finished.connect(lambda: self._set_busy(False))
         self.pool.start(worker)

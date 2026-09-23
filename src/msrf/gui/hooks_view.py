@@ -228,6 +228,8 @@ class HooksView(QWidget):
                 source=source, package=self._pkg(), device_id=self._device_id()),
             on_result=self._show_result,
             on_error=lambda e: self._log(f"error: {e}"),
+            label=f"Frida: {label}",
+            params={"package": self._pkg(), "target": self.device.currentData()},
         )
 
     def _show_result(self, res: dict) -> None:

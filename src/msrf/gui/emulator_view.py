@@ -252,6 +252,7 @@ class EmulatorView(QWidget):
             lambda: getattr(self.host.engine("emulator"), method)(**kwargs),
             on_result=lambda d, s=sid: self._done(s, d, None),
             on_error=lambda e, s=sid: self._done(s, None, e),
+            label=f"Emulator: {method}", params=kwargs or None,
         )
 
     def _begin(self, title: str) -> int:

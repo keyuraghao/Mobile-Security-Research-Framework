@@ -36,6 +36,10 @@ The desktop app (`msrf ui`). Every picture is generated from the current build b
 |---|---|
 | ![Emulator](docs/screenshots/09_emulator.png) | ![Findings](docs/screenshots/10_findings.png) |
 
+| Activity log (every task, with Output / Log / Parameters) |
+|---|
+| ![Activity](docs/screenshots/13_activity.png) |
+
 | Light theme | Dark theme |
 |---|---|
 | ![Light](docs/screenshots/11_theme_light.png) | ![Dark](docs/screenshots/12_theme_dark.png) |

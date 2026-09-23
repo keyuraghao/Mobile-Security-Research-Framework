@@ -108,12 +108,16 @@ class SASTView(QWidget):
         open_btn = QPushButton("Open…")
         self.scan_btn = QPushButton("Analyze")
         self.scan_btn.setObjectName("primary")
+        self.onestep_btn = QPushButton("One-Step Assessment")
+        self.onestep_btn.setToolTip(
+            "Scan, collect findings and generate a PDF report in one step")
         self.export_btn = QPushButton("Export report")
         self.export_btn.setEnabled(False)
         bar.addWidget(QLabel("Application:"))
         bar.addWidget(self.path, 1)
         bar.addWidget(open_btn)
         bar.addWidget(self.scan_btn)
+        bar.addWidget(self.onestep_btn)
         bar.addWidget(self.export_btn)
         lay.addLayout(bar)
 
@@ -176,6 +180,7 @@ class SASTView(QWidget):
 
         open_btn.clicked.connect(self._open)
         self.scan_btn.clicked.connect(self._scan)
+        self.onestep_btn.clicked.connect(self._one_step)
         self.export_btn.clicked.connect(self._export)
 
     def _build_files_tab(self) -> QWidget:
@@ -217,10 +222,45 @@ class SASTView(QWidget):
             lambda: self.host.engine("sast").scan(p),
             on_result=self._scanned,
             on_error=self._scan_failed,
+            label=f"SAST scan: {p.rsplit('/', 1)[-1]}", params={"app": p},
         )
+
+    def _one_step(self) -> None:
+        p = self.path.text().strip()
+        if not p:
+            return
+        self.summary.setText("One-Step Assessment: scan, collect findings, generate a report…")
+        self.scan_btn.setEnabled(False)
+        self.onestep_btn.setEnabled(False)
+        self.host.status("One-Step Assessment running…")
+        self.host.submit(
+            lambda: self.host.engine("workflow").static_assessment(p, report_format="pdf"),
+            on_result=self._one_step_done,
+            on_error=self._scan_failed,
+            label=f"One-Step: {p.rsplit('/', 1)[-1]}", params={"app": p},
+        )
+
+    def _one_step_done(self, res: dict) -> None:
+        self.scan_btn.setEnabled(True)
+        self.onestep_btn.setEnabled(True)
+        self.summary.setText(
+            f"One-Step done: score {res.get('security_score')}/100, "
+            f"{res.get('findings_imported')} findings, report: {res.get('report')}"
+        )
+        self.host.status(f"One-Step report: {res.get('report')}", 12000)
+        # Load the full report into the tables and refresh Findings.
+        if res.get("scan_hash"):
+            self._hash = res["scan_hash"]
+            self.host.submit(
+                lambda: self.host.engine("sast").report(res["scan_hash"]),
+                on_result=self._populate,
+            )
+        if hasattr(self.host, "findings_view"):
+            self.host.findings_view.refresh()
 
     def _scan_failed(self, err: str) -> None:
         self.scan_btn.setEnabled(True)
+        self.onestep_btn.setEnabled(True)
         self.summary.setText(f"Analysis failed: {err}")
         self.host.status("Analysis failed")
 

@@ -46,6 +46,9 @@ devices and networks you own or are explicitly permitted to test.</div>
   <li><b>Frida hooks</b>: the <b>Frida Hooks</b> tab has 20+ inbuilt payloads.
       Pick one and run it on the built-in <b>simulator</b> (no device needed) or a
       connected device.</li>
+  <li><b>One-Step Assessment</b> (Static tab) scans an app, collects its findings and
+      generates a report in a single click. Every task the app runs is recorded on the
+      <b>Activity</b> tab with its Output, Log and Parameters.</li>
   <li><b>Dynamic / Proxy / Network / IoT</b>: device instrumentation, traffic
       interception (including WireGuard), interception-network setup, and nmap /
       binwalk recon.</li>
@@ -93,7 +96,8 @@ Data</b>, and collect results in <b>Findings</b>.</p>
 <p>msrf ships a Model Context Protocol (MCP) server that exposes <b>every</b>
 engine action as a tool, so an AI client (for example Claude) can drive the whole
 toolkit. Tools are named <code>&lt;engine&gt;_&lt;action&gt;</code> (e.g.
-<code>sast_scan</code>, <code>hooks_test</code>), plus <code>msrf_capabilities</code>
+<code>sast_scan</code>, <code>hooks_test</code>, and the one-step
+<code>workflow_static_assessment</code>), plus <code>msrf_capabilities</code>
 (full self-introspection), <code>msrf_preflight</code> and
 <code>msrf_workspace</code>.</p>
 

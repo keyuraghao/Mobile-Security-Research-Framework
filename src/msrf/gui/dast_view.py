@@ -189,4 +189,5 @@ class DastView(QWidget):
             lambda: getattr(self.host.engine(engine), method)(**kwargs),
             on_result=lambda d: self.output.appendPlainText(json.dumps(d, indent=2, default=str)),
             on_error=lambda e: self.output.appendPlainText(f"error: {e}"),
+            label=f"DAST: {spec['label']}", params=kwargs or None,
         )

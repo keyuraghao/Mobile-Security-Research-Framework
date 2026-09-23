@@ -187,6 +187,17 @@ def main() -> int:
     tab("Dashboard")
     shot("01_dashboard.png")
 
+    # Activity: the task log (every action recorded, with Output/Log/Parameters).
+    for i in range(win.tabs.count()):
+        if win.tabs.tabText(i) == "Activity":
+            win.tabs.setCurrentIndex(i)
+            av = win.tabs.widget(i)
+            if av.table.rowCount():
+                av.table.selectRow(0)
+            pump()
+            shot("13_activity.png")
+            break
+
     # Theme pair on the SAST findings view.
     tab("Static (SAST)")
     sast_sub("Findings")

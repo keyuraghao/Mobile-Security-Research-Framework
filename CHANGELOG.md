@@ -4,6 +4,12 @@ All notable changes to **msrf** are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.3.10] - 2026-09-23
+
+### Added
+- **Activity log** (a new Activity tab), inspired by Core Impact's Executed Modules console: every task the app runs is recorded with its status, start and elapsed time, and a detail pane with three tabs, Output (the result), Log (errors or messages) and Parameters. The history is saved to the workspace so it survives a restart.
+- **One-Step Assessment**: a new `workflow` engine that runs a whole static assessment in one call (scan an app, collect its findings, generate a report) and a dynamic smoke test (key Frida checks on the simulator). There is a One-Step button on the Static tab, and because every action is exposed on the CLI and the MCP server, an AI client can run these end-to-end too (`workflow_static_assessment`, `workflow_dynamic_smoke`).
+
 ## [0.3.9] - 2026-09-23
 
 ### Changed
