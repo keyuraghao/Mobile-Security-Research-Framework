@@ -10,8 +10,6 @@ Unified, cross-platform Mobile and IoT SAST / DAST / penetration-testing toolkit
 
 Mobile Security Research Framework glues best-in-class security engines together behind one consistent interface so you (or an AI agent) can run an assessment end to end: static analysis, dynamic analysis, runtime instrumentation, traffic interception from anywhere, and IoT/firmware recon.
 
-> Authorised testing only. This toolkit is for assessing applications, devices, and networks that you own or have explicit written permission to test. You are responsible for complying with all applicable laws.
-
 ## Screenshots
 
 The desktop app (`msrf ui`). Every picture is generated from the current build by `packaging/capture_screenshots.py`, which scans the DIVA sample app for real.
